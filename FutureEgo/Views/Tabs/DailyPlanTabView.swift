@@ -104,7 +104,7 @@ private struct TimelineRow: View {
         .opacity(appeared ? 1 : 0)
         .offset(y: appeared ? 0 : 8)
         .animation(
-            .spring(stiffness: 400, damping: 28).delay(Double(index) * 0.04),
+            .spring(response: 0.35, dampingFraction: 0.7).delay(Double(index) * 0.04),
             value: appeared
         )
     }

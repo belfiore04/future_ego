@@ -34,35 +34,36 @@ struct CurrentTabView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            ScrollView(.vertical, showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 0) {
-                    // ── Header ──
-                    headerView
+        ScrollView(.vertical, showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 0) {
+                // ── Header ──
+                headerView
 
-                    // ── Event content ──
-                    CurrentEventView(event: currentEvent)
-                }
+                // ── Event content ──
+                CurrentEventView(event: currentEvent)
             }
-            .toolbar {
-                ToolbarItemGroup(placement: .bottomBar) {
-                    Button {
-                        // TODO: camera action
-                    } label: {
-                        Label("拍照", systemImage: "camera")
-                    }
-                    .tint(toolbarGray)
-
-                    Spacer()
-
-                    Button {
-                        onStartCalling?()
-                    } label: {
-                        Label("AI Coach", systemImage: "phone")
-                    }
-                    .tint(accentGreen)
+        }
+        .safeAreaInset(edge: .bottom) {
+            HStack {
+                Button {
+                    // TODO: camera action
+                } label: {
+                    Label("拍照", systemImage: "camera")
                 }
+                .tint(toolbarGray)
+
+                Spacer()
+
+                Button {
+                    onStartCalling?()
+                } label: {
+                    Label("AI Coach", systemImage: "phone")
+                }
+                .tint(accentGreen)
             }
+            .padding(.horizontal, 24)
+            .padding(.vertical, 10)
+            .background(.bar)
         }
     }
 

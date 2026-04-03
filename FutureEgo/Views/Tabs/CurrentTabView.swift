@@ -3,7 +3,7 @@ import SwiftUI
 // MARK: - CurrentTabView
 
 /// The "此刻" (Now) tab — shows the current event detail with a header,
-/// scrollable event content, and a floating toolbar at the bottom.
+/// scrollable event content, and a native bottom toolbar.
 struct CurrentTabView: View {
     let schedule: [ScheduleItem]
     let currentIndex: Int
@@ -34,8 +34,7 @@ struct CurrentTabView: View {
     }
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            // Main content
+        NavigationStack {
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
                     // ── Header ──
@@ -44,13 +43,26 @@ struct CurrentTabView: View {
                     // ── Event content ──
                     CurrentEventView(event: currentEvent)
                 }
-                // Extra bottom padding so content doesn't hide behind toolbar
-                .padding(.bottom, 100)
             }
+            .toolbar {
+                ToolbarItemGroup(placement: .bottomBar) {
+                    Button {
+                        // TODO: camera action
+                    } label: {
+                        Label("拍照", systemImage: "camera")
+                    }
+                    .tint(toolbarGray)
 
-            // ── Floating toolbar ──
-            floatingToolbar
-                .padding(.bottom, 16)
+                    Spacer()
+
+                    Button {
+                        onStartCalling?()
+                    } label: {
+                        Label("AI Coach", systemImage: "phone")
+                    }
+                    .tint(accentGreen)
+                }
+            }
         }
     }
 
@@ -79,56 +91,6 @@ struct CurrentTabView: View {
         .padding(.horizontal, 24)
         .padding(.top, 24)
         .padding(.bottom, 16)
-    }
-
-    // MARK: - Floating toolbar
-
-    private var floatingToolbar: some View {
-        HStack(spacing: 0) {
-            // Camera button
-            Button {
-                // TODO: camera action
-            } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: "camera")
-                        .font(.system(size: 17, weight: .medium))
-                    Text("拍照")
-                        .font(.system(size: 15, weight: .medium))
-                }
-                .foregroundColor(toolbarGray)
-                .padding(.horizontal, 20)
-                .padding(.vertical, 10)
-            }
-
-            // Divider
-            Rectangle()
-                .fill(Color.black.opacity(0.1))
-                .frame(width: 0.5, height: 24)
-
-            // AI Coach button
-            Button {
-                onStartCalling?()
-            } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: "phone")
-                        .font(.system(size: 17, weight: .medium))
-                    Text("AI Coach")
-                        .font(.system(size: 15, weight: .medium))
-                }
-                .foregroundColor(accentGreen)
-                .padding(.horizontal, 20)
-                .padding(.vertical, 10)
-            }
-        }
-        .background(
-            Capsule()
-                .fill(.ultraThinMaterial)
-                .shadow(color: .black.opacity(0.08), radius: 10, x: 0, y: 2)
-                .overlay(
-                    Capsule()
-                        .stroke(Color.black.opacity(0.06), lineWidth: 0.5)
-                )
-        )
     }
 
     // MARK: - Date helpers

@@ -21,7 +21,6 @@ struct CallingOverlay: View {
 
     // MARK: - State
     @State private var callTime: Int = 0
-    @State private var overlayVisible = false
     @State private var messages: [ChatMessage] = []
     @State private var inputText = ""
     @State private var msgIdCounter = 0
@@ -50,12 +49,8 @@ struct CallingOverlay: View {
 
     var body: some View {
         ZStack {
-            // Blurred dark background
-            Rectangle()
-                .fill(.ultraThinMaterial)
-                .environment(\.colorScheme, .dark)
-                .overlay(Color.black.opacity(overlayVisible ? 0.35 : 0))
-                .ignoresSafeArea()
+            // Dark background (fullScreenCover provides its own chrome)
+            Color.black.ignoresSafeArea()
 
             VStack(spacing: 0) {
                 // Timer
@@ -71,7 +66,6 @@ struct CallingOverlay: View {
                 bottomControls
             }
         }
-        .opacity(overlayVisible ? 1 : 0)
         .onReceive(timer) { _ in
             callTime += 1
         }
@@ -206,13 +200,7 @@ struct CallingOverlay: View {
 
             // Hang up button
             Button(action: {
-                withAnimation(.easeInOut(duration: 0.3)) {
-                    overlayVisible = false
-                }
-                // Delay actual dismiss so fade-out is visible
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-                    onHangUp()
-                }
+                onHangUp()
             }) {
                 Text("结束通话")
                     .font(.system(size: 17, weight: .semibold))
@@ -246,11 +234,6 @@ struct CallingOverlay: View {
     }
 
     private func startCall() {
-        // Fade in
-        withAnimation(.easeOut(duration: 0.8)) {
-            overlayVisible = true
-        }
-
         // AI greeting after 1s
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
             withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {

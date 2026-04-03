@@ -34,7 +34,7 @@ struct ReviewTabView: View {
                     .multilineTextAlignment(.center)
                     .lineSpacing(4)
             }
-            .opacity(appeared ? 1 : 0)
+            .opacity(appeared ? 1.0 : 0.0)
             .offset(y: appeared ? 0 : 12)
             .animation(
                 .spring(response: 0.35, dampingFraction: 0.7),

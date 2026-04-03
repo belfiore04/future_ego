@@ -4,20 +4,8 @@ struct ContentView: View {
     @State private var activeTab: TabId = .current
     @Namespace private var tabAnimation
 
-    /// Track the previous tab index to determine slide direction
-    @State private var previousTabIndex: Int = 0
-
     /// Whether the AI Coach calling overlay is active.
     @State private var isCalling = false
-
-    private var currentTabIndex: Int {
-        TabId.allCases.firstIndex(of: activeTab) ?? 0
-    }
-
-    /// Slide direction: positive = slide from right, negative = slide from left
-    private var slideDirection: CGFloat {
-        currentTabIndex >= previousTabIndex ? 1 : -1
-    }
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -47,50 +35,30 @@ struct ContentView: View {
             }
         }
         .animation(.easeInOut(duration: 0.35), value: isCalling)
-        .onChange(of: activeTab) { oldValue, _ in
-            previousTabIndex = TabId.allCases.firstIndex(of: oldValue) ?? 0
-        }
     }
 
     // MARK: - Tab Content
 
     @ViewBuilder
     private var tabContent: some View {
-        Group {
-            switch activeTab {
-            case .current:
-                CurrentTabView(
-                        schedule: SampleData.schedule,
-                        currentIndex: SampleData.currentIndex,
-                        onStartCalling: {
-                            withAnimation(.easeInOut(duration: 0.35)) {
-                                isCalling = true
-                            }
-                        }
-                    )
-                    .transition(makeSlideTransition())
-            case .daily:
-                DailyPlanTabView()
-                    .transition(makeSlideTransition())
-            case .review:
-                ReviewTabView()
-                    .transition(makeSlideTransition())
-            case .profile:
-                ProfileTabView()
-                    .transition(makeSlideTransition())
-            }
+        switch activeTab {
+        case .current:
+            CurrentTabView(
+                schedule: SampleData.schedule,
+                currentIndex: SampleData.currentIndex,
+                onStartCalling: {
+                    withAnimation(.easeInOut(duration: 0.35)) {
+                        isCalling = true
+                    }
+                }
+            )
+        case .daily:
+            DailyPlanTabView()
+        case .review:
+            ReviewTabView()
+        case .profile:
+            ProfileTabView()
         }
-        .id(activeTab)
-        .animation(.spring(response: 0.35, dampingFraction: 0.85), value: activeTab)
-    }
-
-    // MARK: - Transition
-
-    private func makeSlideTransition() -> AnyTransition {
-        AnyTransition.asymmetric(
-            insertion: .opacity.combined(with: .offset(x: 20 * slideDirection)),
-            removal: .opacity.combined(with: .offset(x: -20 * slideDirection))
-        )
     }
 }
 

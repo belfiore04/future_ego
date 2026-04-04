@@ -209,6 +209,7 @@ struct CallingOverlay: View {
             // Hang up button
             Button(action: {
                 voice.stopAll()
+                ScheduledCallService.shared.activeCallMode = nil
                 Task { await AIService.shared.resetConversation() }
                 onHangUp()
             }) {
@@ -408,8 +409,22 @@ struct CallingOverlay: View {
             voice.startListening()
         }
 
+        // Check if this is a scheduled call
+        let greetingText: String
+        if let mode = ScheduledCallService.shared.activeCallMode {
+            let context = ScheduledCallService.shared.generateCallContext(mode: mode)
+            Task {
+                await AIService.shared.injectContext(context)
+            }
+
+            greetingText = mode == .morning
+                ? "早上好！☀️ 该起床了，让我帮你看看今天的安排~"
+                : "辛苦了一天！🌙 聊聊今天过得怎么样？"
+        } else {
+            greetingText = "你好！我是你的 AI Coach，今天想聊些什么？"
+        }
+
         // AI greeting after 1s
-        let greetingText = "你好！我是你的 AI Coach，今天想聊些什么？"
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
             withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
                 addMessage(role: .ai, text: greetingText)

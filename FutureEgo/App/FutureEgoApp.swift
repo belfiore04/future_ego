@@ -7,10 +7,15 @@ struct FutureEgoApp: App {
 
     var body: some Scene {
         WindowGroup {
-            if onboardingCompleted {
-                ContentView()
-            } else {
-                OnboardingView()
+            Group {
+                if onboardingCompleted {
+                    ContentView()
+                } else {
+                    OnboardingView()
+                }
+            }
+            .onAppear {
+                ReminderService.shared.requestPermission()
             }
         }
         .modelContainer(for: [

@@ -86,10 +86,24 @@ class ScheduleManager: ObservableObject {
         let insertIndex = schedule.firstIndex { $0.scheduleTime > timeRange } ?? schedule.count
         schedule.insert(newItem, at: insertIndex)
 
+        // Schedule smart reminders if location is provided
+        if let location = location, !location.isEmpty {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd HH:mm"
+            if let eventDate = formatter.date(from: "\(date) \(startTime)") {
+                ReminderService.shared.scheduleSmartReminders(for: title, at: location, eventTime: eventDate)
+            }
+        }
+
         return "已添加日程「\(title)」到 \(date) \(startTime)"
     }
 
     func deleteSchedule(title: String, date: String?) -> String {
+        // Cancel reminders for matching items before removing
+        for item in schedule where item.title.contains(title) || title.contains("所有") {
+            ReminderService.shared.cancelReminders(for: item.title)
+        }
+
         let before = schedule.count
         schedule.removeAll { item in
             item.title.contains(title) || title.contains("所有")

@@ -7,6 +7,8 @@ struct NotificationSettingsView: View {
     @AppStorage("notify_ai_coach") private var notifyAICoach = true
     @AppStorage("notify_daily_review") private var notifyDailyReview = true
 
+    @StateObject private var scheduledCall = ScheduledCallService.shared
+
     var body: some View {
         Form {
             Section("提醒类型") {
@@ -15,12 +17,78 @@ struct NotificationSettingsView: View {
                 Toggle("每日复盘提醒", isOn: $notifyDailyReview)
             }
 
+            Section("AI 定时电话") {
+                Toggle("晨间唤醒", isOn: $scheduledCall.morningCallEnabled)
+                if scheduledCall.morningCallEnabled {
+                    DatePicker(
+                        "唤醒时间",
+                        selection: morningCallBinding,
+                        displayedComponents: .hourAndMinute
+                    )
+                }
+
+                Toggle("晚间复盘", isOn: $scheduledCall.eveningCallEnabled)
+                if scheduledCall.eveningCallEnabled {
+                    DatePicker(
+                        "复盘时间",
+                        selection: eveningCallBinding,
+                        displayedComponents: .hourAndMinute
+                    )
+                }
+            }
+            .onChange(of: scheduledCall.morningCallEnabled) { _, _ in
+                scheduledCall.scheduleAllCalls()
+            }
+            .onChange(of: scheduledCall.eveningCallEnabled) { _, _ in
+                scheduledCall.scheduleAllCalls()
+            }
+
             Section(footer: Text("开启后将在相应时间推送通知")) {
                 // Placeholder: future reminder time picker
             }
         }
         .navigationTitle("通知提醒")
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    // MARK: - DatePicker Bindings
+
+    /// Creates a Date binding from the morning hour/minute @AppStorage values.
+    private var morningCallBinding: Binding<Date> {
+        Binding<Date>(
+            get: {
+                dateFrom(hour: scheduledCall.morningCallHour, minute: scheduledCall.morningCallMinute)
+            },
+            set: { newDate in
+                let components = Calendar.current.dateComponents([.hour, .minute], from: newDate)
+                scheduledCall.morningCallHour = components.hour ?? 7
+                scheduledCall.morningCallMinute = components.minute ?? 0
+                scheduledCall.scheduleAllCalls()
+            }
+        )
+    }
+
+    /// Creates a Date binding from the evening hour/minute @AppStorage values.
+    private var eveningCallBinding: Binding<Date> {
+        Binding<Date>(
+            get: {
+                dateFrom(hour: scheduledCall.eveningCallHour, minute: scheduledCall.eveningCallMinute)
+            },
+            set: { newDate in
+                let components = Calendar.current.dateComponents([.hour, .minute], from: newDate)
+                scheduledCall.eveningCallHour = components.hour ?? 22
+                scheduledCall.eveningCallMinute = components.minute ?? 0
+                scheduledCall.scheduleAllCalls()
+            }
+        )
+    }
+
+    /// Converts hour + minute integers into a Date for DatePicker binding.
+    private func dateFrom(hour: Int, minute: Int) -> Date {
+        var components = DateComponents()
+        components.hour = hour
+        components.minute = minute
+        return Calendar.current.date(from: components) ?? .now
     }
 }
 

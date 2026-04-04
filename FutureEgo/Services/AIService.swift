@@ -419,6 +419,12 @@ actor AIService {
         }
     }
 
+    /// Inject additional context into the conversation as a system message.
+    /// Used by ScheduledCallService to prepend morning/evening call prompts.
+    func injectContext(_ context: String) {
+        conversationHistory.append(["role": "system", "content": context])
+    }
+
     /// Clear conversation history (called when the user hangs up).
     func resetConversation() {
         conversationHistory = []

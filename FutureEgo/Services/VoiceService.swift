@@ -241,7 +241,7 @@ final class VoiceService: ObservableObject {
             try session.setCategory(
                 .playAndRecord,
                 mode: .voiceChat,
-                options: [.defaultToSpeaker, .allowBluetooth]
+                options: [.defaultToSpeaker, .allowBluetoothA2DP]
             )
             try session.setActive(true)
         } catch {
@@ -291,10 +291,10 @@ final class VoiceService: ObservableObject {
 
 private extension Data {
     mutating func append(littleEndian value: UInt32) {
-        withUnsafeBytes(of: value.littleEndian) { append(contentsOf: $0) }
+        Swift.withUnsafeBytes(of: value.littleEndian) { append(contentsOf: $0) }
     }
 
     mutating func append(littleEndian value: UInt16) {
-        withUnsafeBytes(of: value.littleEndian) { append(contentsOf: $0) }
+        Swift.withUnsafeBytes(of: value.littleEndian) { append(contentsOf: $0) }
     }
 }

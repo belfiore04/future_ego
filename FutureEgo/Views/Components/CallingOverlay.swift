@@ -24,7 +24,8 @@ struct CallingOverlay: View {
     @State private var messages: [ChatMessage] = []
     @State private var inputText = ""
     @State private var msgIdCounter = 0
-    @State private var mockIndex = 0
+    @State private var isThinking = false
+    @State private var thinkingDotAnimation = false
     @FocusState private var isInputFocused: Bool
 
     /// Timer publisher that fires every second for the call duration counter.
@@ -32,18 +33,6 @@ struct CallingOverlay: View {
 
     // MARK: - Design tokens
     private let accentGreen = Color(hex: "34C759")
-
-    // MARK: - Mock data
-    private static let mockConversation: [(user: String, ai: String)] = [
-        ("我想讨论一下最近的工作效率问题",
-         "好的，能具体说说你遇到了什么挑战吗？是时间管理、注意力分散还是其他方面？"),
-        ("主要是注意力很难集中，总是被各种消息打断",
-         "这是很常见的问题。建议你试试「番茄工作法」——25分钟专注 + 5分钟休息，期间关闭所有通知"),
-        ("听起来不错，还有其他建议吗？",
-         "你可以试试「两分钟法则」：如果一件事两分钟内能做完就立刻做，否则记下来稍后处理，这样能减少心理负担。"),
-        ("好的我试试看，谢谢你",
-         "不客气！坚持一周你就会感受到变化，有任何问题随时找我聊")
-    ]
 
     // MARK: - Body
 
@@ -123,6 +112,15 @@ struct CallingOverlay: View {
                                 removal: .opacity
                             ))
                     }
+
+                    if isThinking {
+                        thinkingBubble
+                            .id("thinking")
+                            .transition(.asymmetric(
+                                insertion: .opacity.combined(with: .move(edge: .bottom)).combined(with: .scale(scale: 0.96)),
+                                removal: .opacity
+                            ))
+                    }
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
@@ -134,6 +132,41 @@ struct CallingOverlay: View {
                     }
                 }
             }
+            .onChange(of: isThinking) { _, thinking in
+                if thinking {
+                    withAnimation(.easeOut(duration: 0.3)) {
+                        proxy.scrollTo("thinking", anchor: .bottom)
+                    }
+                }
+            }
+        }
+    }
+
+    /// Three bouncing dots shown while waiting for the AI reply.
+    private var thinkingBubble: some View {
+        HStack {
+            HStack(spacing: 4) {
+                ForEach(0..<3, id: \.self) { i in
+                    Circle()
+                        .fill(Color.white.opacity(0.5))
+                        .frame(width: 7, height: 7)
+                        .offset(y: thinkingDotAnimation ? -5 : 0)
+                        .animation(
+                            .easeInOut(duration: 0.45)
+                                .repeatForever(autoreverses: true)
+                                .delay(Double(i) * 0.15),
+                            value: thinkingDotAnimation
+                        )
+                }
+            }
+            .padding(.horizontal, 18)
+            .padding(.vertical, 14)
+            .background(Color.white.opacity(0.1))
+            .clipShape(BubbleShape(isUser: false))
+            .onAppear { thinkingDotAnimation = true }
+            .onDisappear { thinkingDotAnimation = false }
+
+            Spacer(minLength: 50)
         }
     }
 
@@ -200,6 +233,7 @@ struct CallingOverlay: View {
 
             // Hang up button
             Button(action: {
+                Task { await AIService.shared.resetConversation() }
                 onHangUp()
             }) {
                 Text("结束通话")
@@ -244,26 +278,38 @@ struct CallingOverlay: View {
 
     private func sendMessage() {
         let trimmed = inputText.trimmingCharacters(in: .whitespaces)
-        guard !trimmed.isEmpty else { return }
+        guard !trimmed.isEmpty, !isThinking else { return }
 
         withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
             addMessage(role: .user, text: trimmed)
         }
         inputText = ""
 
-        // Mock AI reply
-        let idx = mockIndex
-        let reply: String
-        if idx < Self.mockConversation.count {
-            reply = Self.mockConversation[idx].ai
-        } else {
-            reply = "收到！让我想想怎么帮你..."
-        }
-        mockIndex += 1
+        sendToAI(trimmed)
+    }
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                addMessage(role: .ai, text: reply)
+    /// Send text to the Bailian API and append the reply as an AI message.
+    private func sendToAI(_ text: String) {
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+            isThinking = true
+        }
+
+        Task {
+            do {
+                let reply = try await AIService.shared.sendMessage(text)
+                await MainActor.run {
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                        isThinking = false
+                        addMessage(role: .ai, text: reply)
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                        isThinking = false
+                        addMessage(role: .ai, text: "抱歉，网络出了点问题，请稍后再试 😅")
+                    }
+                }
             }
         }
     }

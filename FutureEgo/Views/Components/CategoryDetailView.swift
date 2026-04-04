@@ -62,10 +62,29 @@ struct CategoryDetailView: View {
     // MARK: - Time Range Label
 
     private var timeRangeLabel: String {
+        let now = Date()
+        let cal = Calendar.current
+
         switch timeRange {
-        case .month: "3月份"
-        case .week: "本周 3.30 — 4.4"
-        case .day: "今日 4.4"
+        case .month:
+            let month = cal.component(.month, from: now)
+            return "\(month)月份"
+        case .week:
+            // Calendar.weekday: Sunday=1, Monday=2, …, Saturday=7
+            // We want Monday as start-of-week.
+            let weekday = cal.component(.weekday, from: now)
+            let daysFromMonday = (weekday + 5) % 7  // Mon=0, Tue=1, …, Sun=6
+            let startOfWeek = cal.date(byAdding: .day, value: -daysFromMonday, to: now)!
+            let endOfWeek = cal.date(byAdding: .day, value: 6, to: startOfWeek)!
+            let sm = cal.component(.month, from: startOfWeek)
+            let sd = cal.component(.day, from: startOfWeek)
+            let em = cal.component(.month, from: endOfWeek)
+            let ed = cal.component(.day, from: endOfWeek)
+            return "本周 \(sm).\(sd) — \(em).\(ed)"
+        case .day:
+            let m = cal.component(.month, from: now)
+            let d = cal.component(.day, from: now)
+            return "今日 \(m).\(d)"
         }
     }
 

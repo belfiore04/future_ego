@@ -10,6 +10,12 @@ struct CurrentTabView: View {
     /// Called when the user taps the "AI Coach" toolbar button.
     var onStartCalling: (() -> Void)? = nil
 
+    // MARK: - Camera & stickers state
+    @State private var showCamera = false
+    @State private var capturedImage: UIImage? = nil
+    @State private var stickers: [StickerItem] = []
+    @State private var isProcessing = false
+
     // MARK: - Design tokens
     private let accentGreen = Color(hex: "34C759")
     private let grayText = Color(hex: "8E8E93")
@@ -42,10 +48,27 @@ struct CurrentTabView: View {
                 CurrentEventView(event: currentEvent)
             }
         }
+        .overlay {
+            StickerOverlay(stickers: $stickers)
+        }
+        .overlay(alignment: .center) {
+            if isProcessing {
+                ProgressView("抠图中...")
+                    .padding(24)
+                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+            }
+        }
         .overlay(alignment: .bottomTrailing) {
             floatingButtons
                 .padding(.trailing, 20)
                 .padding(.bottom, 24)
+        }
+        .sheet(isPresented: $showCamera) {
+            CameraPickerView(image: $capturedImage)
+        }
+        .onChange(of: capturedImage) { _, newImage in
+            guard let img = newImage else { return }
+            processImage(img)
         }
     }
 
@@ -54,7 +77,7 @@ struct CurrentTabView: View {
     private var floatingButtons: some View {
         VStack(spacing: 16) {
             glassButton(systemImage: "camera") {
-                // TODO: camera action
+                showCamera = true
             }
             glassButton(systemImage: "phone") {
                 onStartCalling?()
@@ -78,6 +101,29 @@ struct CurrentTabView: View {
                     .frame(width: 47, height: 44)
                     .background(.ultraThinMaterial, in: Circle())
                     .shadow(color: .black.opacity(0.1), radius: 8, y: 4)
+            }
+        }
+    }
+
+    // MARK: - Image segmentation
+
+    private func processImage(_ image: UIImage) {
+        isProcessing = true
+        Task {
+            do {
+                let segmented = try await ImageSegmentationService.segmentForeground(from: image)
+                await MainActor.run {
+                    stickers.append(StickerItem(image: segmented))
+                    isProcessing = false
+                    capturedImage = nil
+                }
+            } catch {
+                await MainActor.run {
+                    // Fallback: use the original image when segmentation fails.
+                    stickers.append(StickerItem(image: image))
+                    isProcessing = false
+                    capturedImage = nil
+                }
             }
         }
     }

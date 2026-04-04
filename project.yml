@@ -22,4 +22,6 @@ targets:
         INFOPLIST_KEY_CFBundleDisplayName: "交联"
         INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
         INFOPLIST_KEY_UILaunchScreen_Generation: true
+        INFOPLIST_KEY_NSCameraUsageDescription: "需要使用相机拍照来创建贴纸"
+        INFOPLIST_KEY_NSPhotoLibraryUsageDescription: "需要访问相册来选择照片"
         GENERATE_INFOPLIST_FILE: true

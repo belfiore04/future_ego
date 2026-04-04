@@ -15,7 +15,7 @@ struct ChatMessage: Identifiable {
 // MARK: - CallingOverlay
 
 /// Full-screen calling overlay with chat, timer, and hang-up button.
-/// Transliterated from calling-screen.tsx.
+/// Supports voice mode (default) with real-time ASR/TTS and text mode toggle.
 struct CallingOverlay: View {
     let onHangUp: () -> Void
 
@@ -26,7 +26,11 @@ struct CallingOverlay: View {
     @State private var msgIdCounter = 0
     @State private var isThinking = false
     @State private var thinkingDotAnimation = false
+    @State private var isVoiceMode = true
+    @State private var micPulse = false
     @FocusState private var isInputFocused: Bool
+
+    @StateObject private var voice = VoiceService.shared
 
     /// Timer publisher that fires every second for the call duration counter.
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
@@ -196,43 +200,15 @@ struct CallingOverlay: View {
 
     private var bottomControls: some View {
         VStack(spacing: 12) {
-            // Text input row
-            HStack(spacing: 8) {
-                TextField("输入消息...", text: $inputText)
-                    .font(.system(size: 16))
-                    .foregroundColor(.white)
-                    .tint(accentGreen)
-                    .focused($isInputFocused)
-                    .onSubmit { sendMessage() }
-
-                // Send button
-                Button(action: sendMessage) {
-                    Image(systemName: "arrow.right")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.white)
-                        .frame(width: 36, height: 36)
-                        .background(
-                            Circle()
-                                .fill(inputText.trimmingCharacters(in: .whitespaces).isEmpty
-                                      ? Color.white.opacity(0.08)
-                                      : accentGreen)
-                        )
-                }
+            if isVoiceMode {
+                voiceModeControls
+            } else {
+                textModeControls
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
-            .background(
-                Capsule()
-                    .fill(Color.white.opacity(0.1))
-                    .overlay(
-                        Capsule()
-                            .stroke(Color.white.opacity(0.12), lineWidth: 1)
-                    )
-            )
-            .padding(.horizontal, 16)
 
             // Hang up button
             Button(action: {
+                voice.stopAll()
                 Task { await AIService.shared.resetConversation() }
                 onHangUp()
             }) {
@@ -259,6 +235,156 @@ struct CallingOverlay: View {
         .padding(.top, 8)
     }
 
+    // MARK: - Voice Mode Controls
+
+    private var voiceModeControls: some View {
+        VStack(spacing: 10) {
+            // Real-time transcript
+            if !voice.currentTranscript.isEmpty {
+                Text(voice.currentTranscript)
+                    .font(.system(size: 15))
+                    .foregroundColor(.white.opacity(0.7))
+                    .lineLimit(2)
+                    .padding(.horizontal, 24)
+                    .transition(.opacity)
+            }
+
+            HStack(spacing: 24) {
+                // Switch to text mode
+                Button(action: switchToTextMode) {
+                    Image(systemName: "keyboard")
+                        .font(.system(size: 20))
+                        .foregroundColor(.white.opacity(0.6))
+                        .frame(width: 44, height: 44)
+                        .background(Circle().fill(Color.white.opacity(0.1)))
+                }
+
+                // Microphone indicator
+                ZStack {
+                    // Outer pulse rings
+                    if voice.isListening && !voice.isSpeaking {
+                        Circle()
+                            .stroke(accentGreen.opacity(0.3), lineWidth: 2)
+                            .frame(width: 80, height: 80)
+                            .scaleEffect(micPulse ? 1.3 : 1.0)
+                            .opacity(micPulse ? 0 : 0.6)
+                            .animation(
+                                .easeInOut(duration: 1.5).repeatForever(autoreverses: false),
+                                value: micPulse
+                            )
+
+                        Circle()
+                            .stroke(accentGreen.opacity(0.2), lineWidth: 1.5)
+                            .frame(width: 80, height: 80)
+                            .scaleEffect(micPulse ? 1.6 : 1.0)
+                            .opacity(micPulse ? 0 : 0.4)
+                            .animation(
+                                .easeInOut(duration: 1.5).repeatForever(autoreverses: false).delay(0.3),
+                                value: micPulse
+                            )
+                    }
+
+                    // Main mic circle
+                    Circle()
+                        .fill(
+                            voice.isSpeaking
+                                ? Color.blue.opacity(0.3)
+                                : (voice.isListening ? accentGreen.opacity(0.2) : Color.white.opacity(0.1))
+                        )
+                        .frame(width: 64, height: 64)
+                        .overlay(
+                            Circle()
+                                .stroke(
+                                    voice.isSpeaking
+                                        ? Color.blue.opacity(0.5)
+                                        : (voice.isListening ? accentGreen.opacity(0.5) : Color.white.opacity(0.2)),
+                                    lineWidth: 2
+                                )
+                        )
+
+                    Image(systemName: voice.isSpeaking ? "speaker.wave.2.fill" : "mic.fill")
+                        .font(.system(size: 24))
+                        .foregroundColor(
+                            voice.isSpeaking
+                                ? .blue
+                                : (voice.isListening ? accentGreen : .white.opacity(0.5))
+                        )
+                }
+                .onAppear { micPulse = true }
+
+                // Spacer button to balance layout
+                Color.clear
+                    .frame(width: 44, height: 44)
+            }
+            .padding(.horizontal, 16)
+        }
+    }
+
+    // MARK: - Text Mode Controls
+
+    private var textModeControls: some View {
+        HStack(spacing: 8) {
+            // Switch to voice mode
+            Button(action: switchToVoiceMode) {
+                Image(systemName: "mic.fill")
+                    .font(.system(size: 16))
+                    .foregroundColor(accentGreen)
+                    .frame(width: 36, height: 36)
+                    .background(Circle().fill(accentGreen.opacity(0.15)))
+            }
+
+            TextField("输入消息...", text: $inputText)
+                .font(.system(size: 16))
+                .foregroundColor(.white)
+                .tint(accentGreen)
+                .focused($isInputFocused)
+                .onSubmit { sendMessage() }
+
+            // Send button
+            Button(action: sendMessage) {
+                Image(systemName: "arrow.right")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.white)
+                    .frame(width: 36, height: 36)
+                    .background(
+                        Circle()
+                            .fill(inputText.trimmingCharacters(in: .whitespaces).isEmpty
+                                  ? Color.white.opacity(0.08)
+                                  : accentGreen)
+                    )
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .background(
+            Capsule()
+                .fill(Color.white.opacity(0.1))
+                .overlay(
+                    Capsule()
+                        .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                )
+        )
+        .padding(.horizontal, 16)
+    }
+
+    // MARK: - Mode Switching
+
+    private func switchToTextMode() {
+        voice.stopListening()
+        withAnimation(.easeInOut(duration: 0.25)) {
+            isVoiceMode = false
+        }
+        isInputFocused = true
+    }
+
+    private func switchToVoiceMode() {
+        isInputFocused = false
+        withAnimation(.easeInOut(duration: 0.25)) {
+            isVoiceMode = true
+        }
+        voice.startListening()
+    }
+
     // MARK: - Helpers
 
     private func formatTime(_ seconds: Int) -> String {
@@ -268,12 +394,29 @@ struct CallingOverlay: View {
     }
 
     private func startCall() {
+        // Set up voice service callbacks
+        voice.onSentenceComplete = { [self] text in
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                addMessage(role: .user, text: text)
+                PersistenceService.shared.saveChatMessage(role: "user", text: text)
+            }
+            sendToAI(text)
+        }
+
+        // Start listening in voice mode
+        if isVoiceMode {
+            voice.startListening()
+        }
+
         // AI greeting after 1s
         let greetingText = "你好！我是你的 AI Coach，今天想聊些什么？"
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
             withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
                 addMessage(role: .ai, text: greetingText)
                 PersistenceService.shared.saveChatMessage(role: "ai", text: greetingText)
+            }
+            if isVoiceMode {
+                Task { await voice.speak(greetingText) }
             }
         }
     }
@@ -292,6 +435,7 @@ struct CallingOverlay: View {
     }
 
     /// Send text to the Bailian API and append the reply as an AI message.
+    /// In voice mode, also plays the reply via TTS.
     private func sendToAI(_ text: String) {
         withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
             isThinking = true
@@ -307,8 +451,12 @@ struct CallingOverlay: View {
                         PersistenceService.shared.saveChatMessage(role: "ai", text: reply)
                     }
                 }
+                // Auto-play TTS in voice mode
+                if isVoiceMode {
+                    await voice.speak(reply)
+                }
             } catch {
-                let errorText = "抱歉，网络出了点问题，请稍后再试 😅"
+                let errorText = "抱歉，网络出了点问题，请稍后再试"
                 await MainActor.run {
                     withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
                         isThinking = false

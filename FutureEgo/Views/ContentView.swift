@@ -32,8 +32,8 @@ enum TabId: String, CaseIterable {
 struct ContentView: View {
     @State private var activeTab: TabId = .current
 
-    /// Whether the AI Coach calling overlay is active.
-    @State private var isCalling = false
+    /// CallKit-backed calling service (replaces plain @State isCalling).
+    @StateObject private var callService = CallService.shared
 
     /// Shared schedule state, mutated by AI function calls.
     @StateObject private var scheduleManager = ScheduleManager.shared
@@ -44,7 +44,7 @@ struct ContentView: View {
                 schedule: scheduleManager.schedule,
                 currentIndex: scheduleManager.currentIndex,
                 onStartCalling: {
-                    isCalling = true
+                    callService.startCall()
                 }
             )
             .tabItem {
@@ -71,9 +71,9 @@ struct ContentView: View {
                 .tag(TabId.profile)
         }
         .tint(Color(hex: "34C759"))
-        .fullScreenCover(isPresented: $isCalling) {
+        .fullScreenCover(isPresented: $callService.isCallActive) {
             CallingOverlay {
-                isCalling = false
+                callService.endCall()
             }
         }
     }

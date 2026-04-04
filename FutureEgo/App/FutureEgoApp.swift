@@ -3,10 +3,15 @@ import SwiftData
 
 @main
 struct FutureEgoApp: App {
-    // TODO: Wave 2 will replace ContentView with the main tab navigation
+    @AppStorage("onboarding_completed") private var onboardingCompleted = false
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            if onboardingCompleted {
+                ContentView()
+            } else {
+                OnboardingView()
+            }
         }
         .modelContainer(for: [
             PersistedScheduleStatus.self,

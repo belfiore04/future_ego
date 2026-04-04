@@ -35,11 +35,14 @@ struct ContentView: View {
     /// Whether the AI Coach calling overlay is active.
     @State private var isCalling = false
 
+    /// Shared schedule state, mutated by AI function calls.
+    @StateObject private var scheduleManager = ScheduleManager.shared
+
     var body: some View {
         TabView(selection: $activeTab) {
             CurrentTabView(
-                schedule: SampleData.schedule,
-                currentIndex: SampleData.currentIndex,
+                schedule: scheduleManager.schedule,
+                currentIndex: scheduleManager.currentIndex,
                 onStartCalling: {
                     isCalling = true
                 }

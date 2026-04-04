@@ -3,10 +3,12 @@ import SwiftUI
 // MARK: - DailyPlanTabView
 
 struct DailyPlanTabView: View {
+    @ObservedObject private var scheduleManager = ScheduleManager.shared
+
     @State private var selectedItem: ScheduleItem?
     @State private var appeared = false
 
-    private let schedule = SampleData.schedule
+    private var schedule: [ScheduleItem] { scheduleManager.schedule }
 
     private var doneCount: Int {
         schedule.filter { $0.status == .done }.count

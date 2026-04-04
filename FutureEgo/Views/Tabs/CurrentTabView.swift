@@ -23,9 +23,10 @@ struct CurrentTabView: View {
     private let accentGreen = Color(hex: "34C759")
     private let grayText = Color(hex: "8E8E93")
 
-    /// Current event derived from the schedule.
-    private var currentEvent: CurrentEventData {
-        schedule[currentIndex].detail
+    /// Current event derived from the schedule (nil when schedule is empty).
+    private var currentEvent: CurrentEventData? {
+        guard !schedule.isEmpty, currentIndex < schedule.count else { return nil }
+        return schedule[currentIndex].detail
     }
 
     /// Event progress (fraction of completed items before the current one).
@@ -48,7 +49,11 @@ struct CurrentTabView: View {
                 headerView
 
                 // ── Event content ──
-                CurrentEventView(event: currentEvent)
+                if let currentEvent {
+                    CurrentEventView(event: currentEvent)
+                } else {
+                    emptySchedulePlaceholder
+                }
             }
         }
         .overlay {
@@ -77,6 +82,24 @@ struct CurrentTabView: View {
             weather.requestLocation()
             loadPersistedStickers()
         }
+    }
+
+    // MARK: - Empty Schedule Placeholder
+
+    private var emptySchedulePlaceholder: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "calendar.badge.plus")
+                .font(.system(size: 44))
+                .foregroundStyle(accentGreen.opacity(0.5))
+            Text("暂无日程")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(.primary)
+            Text("试试跟 AI Coach 说「帮我安排一下」")
+                .font(.system(size: 14))
+                .foregroundColor(grayText)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, 80)
     }
 
     // MARK: - Floating Liquid Glass Buttons

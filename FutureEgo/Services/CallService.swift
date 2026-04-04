@@ -9,18 +9,32 @@ class CallService: NSObject, ObservableObject {
     @Published var isCallActive = false
     @Published var callUUID: UUID?
 
-    private let provider: CXProvider
-    private let callController = CXCallController()
+    private var provider: CXProvider?
+    private var callController: CXCallController?
+
+    /// CallKit is unavailable on the iOS Simulator.
+    private let isSimulator: Bool = {
+        #if targetEnvironment(simulator)
+        return true
+        #else
+        return false
+        #endif
+    }()
 
     override init() {
-        let config = CXProviderConfiguration()
-        config.supportsVideo = false
-        config.maximumCallsPerCallGroup = 1
-        config.supportedHandleTypes = [.generic]
-
-        provider = CXProvider(configuration: config)
         super.init()
-        provider.setDelegate(self, queue: nil)
+
+        if !isSimulator {
+            let config = CXProviderConfiguration()
+            config.supportsVideo = false
+            config.maximumCallsPerCallGroup = 1
+            config.supportedHandleTypes = [.generic]
+
+            let p = CXProvider(configuration: config)
+            provider = p
+            callController = CXCallController()
+            p.setDelegate(self, queue: nil)
+        }
     }
 
     // MARK: - Outgoing Call (user taps phone button)
@@ -29,13 +43,20 @@ class CallService: NSObject, ObservableObject {
         let uuid = UUID()
         callUUID = uuid
 
+        if isSimulator {
+            // Bypass CallKit on simulator
+            configureAudioSession()
+            isCallActive = true
+            return
+        }
+
         let handle = CXHandle(type: .generic, value: "Future Ego")
         let startAction = CXStartCallAction(call: uuid, handle: handle)
         startAction.isVideo = false
         startAction.contactIdentifier = "AI Coach"
 
         let transaction = CXTransaction(action: startAction)
-        callController.request(transaction) { error in
+        callController?.request(transaction) { error in
             if let error {
                 print("Start call error: \(error)")
             }
@@ -44,7 +65,7 @@ class CallService: NSObject, ObservableObject {
         // Mark as connected after brief delay (simulates "dialing")
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
             guard let self else { return }
-            self.provider.reportOutgoingCall(with: uuid, connectedAt: nil)
+            self.provider?.reportOutgoingCall(with: uuid, connectedAt: nil)
         }
     }
 
@@ -54,6 +75,12 @@ class CallService: NSObject, ObservableObject {
         let uuid = UUID()
         callUUID = uuid
 
+        if isSimulator {
+            configureAudioSession()
+            isCallActive = true
+            return
+        }
+
         let update = CXCallUpdate()
         update.remoteHandle = CXHandle(type: .generic, value: reason)
         update.localizedCallerName = "Future Ego"
@@ -61,7 +88,7 @@ class CallService: NSObject, ObservableObject {
         update.supportsGrouping = false
         update.supportsHolding = false
 
-        provider.reportNewIncomingCall(with: uuid, update: update) { error in
+        provider?.reportNewIncomingCall(with: uuid, update: update) { error in
             if let error {
                 print("Report incoming call error: \(error)")
             }
@@ -72,9 +99,16 @@ class CallService: NSObject, ObservableObject {
 
     func endCall() {
         guard let uuid = callUUID else { return }
+
+        if isSimulator {
+            isCallActive = false
+            callUUID = nil
+            return
+        }
+
         let endAction = CXEndCallAction(call: uuid)
         let transaction = CXTransaction(action: endAction)
-        callController.request(transaction) { error in
+        callController?.request(transaction) { error in
             if let error {
                 print("End call error: \(error)")
             }
@@ -101,7 +135,6 @@ extension CallService: CXProviderDelegate {
     }
 
     nonisolated func provider(_ provider: CXProvider, perform action: CXAnswerCallAction) {
-        // User answered incoming call
         configureAudioSession()
         action.fulfill()
         Task { @MainActor in
@@ -117,14 +150,9 @@ extension CallService: CXProviderDelegate {
         }
     }
 
-    nonisolated func provider(_ provider: CXProvider, didActivate audioSession: AVAudioSession) {
-        // Called by the system after CallKit activates the audio session.
-        // Audio hardware is now available for recording / playback.
-    }
+    nonisolated func provider(_ provider: CXProvider, didActivate audioSession: AVAudioSession) {}
 
-    nonisolated func provider(_ provider: CXProvider, didDeactivate audioSession: AVAudioSession) {
-        // Called by the system after CallKit deactivates the audio session.
-    }
+    nonisolated func provider(_ provider: CXProvider, didDeactivate audioSession: AVAudioSession) {}
 
     // MARK: - Audio Session
 

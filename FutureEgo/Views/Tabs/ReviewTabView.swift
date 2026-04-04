@@ -215,57 +215,35 @@ private struct MiniChartPreview: View {
         .padding(8)
     }
 
-    // Memory: photo collage
+    // Memory: placeholder collage (no network loading on main page)
     private var memoryMini: some View {
-        let items = (dayData?.memory.items ?? []).filter { $0.image != nil }.prefix(4)
+        let accent = Color(hex: "FF2D55")
+        let rotations: [Double] = [-3, 5, -2, 4]
         return GeometryReader { geo in
             ZStack {
-                ForEach(Array(items.enumerated()), id: \.offset) { i, item in
-                    if let url = item.image {
-                        AsyncImage(url: url) { phase in
-                            if case .success(let image) = phase {
-                                image.resizable().scaledToFill()
-                            } else {
-                                Rectangle().fill(Color.black.opacity(0.06))
-                            }
-                        }
+                ForEach(0..<4, id: \.self) { i in
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(accent.opacity(0.08 + Double(i) * 0.04))
+                        .overlay(
+                            Image(systemName: "photo")
+                                .font(.system(size: i == 0 ? 16 : 12))
+                                .foregroundColor(accent.opacity(0.3))
+                        )
                         .frame(
                             width: i == 0 ? geo.size.width * 0.45 : geo.size.width * 0.30,
                             height: i == 0 ? geo.size.height * 0.65 : geo.size.height * 0.42
                         )
-                        .clipped()
                         .cornerRadius(6)
-                        .rotationEffect(.degrees(item.rotate ?? 0))
-                        .shadow(color: .black.opacity(0.15), radius: 2, y: 1)
+                        .rotationEffect(.degrees(rotations[i]))
+                        .shadow(color: .black.opacity(0.08), radius: 2, y: 1)
                         .position(
-                            x: photoX(index: i, size: geo.size),
-                            y: photoY(index: i, size: geo.size)
+                            x: [geo.size.width * 0.28, geo.size.width * 0.72, geo.size.width * 0.20, geo.size.width * 0.72][i],
+                            y: [geo.size.height * 0.38, geo.size.height * 0.28, geo.size.height * 0.72, geo.size.height * 0.72][i]
                         )
-                    }
                 }
             }
         }
         .clipped()
-    }
-
-    private func photoX(index: Int, size: CGSize) -> CGFloat {
-        switch index {
-        case 0: return size.width * 0.28
-        case 1: return size.width * 0.72
-        case 2: return size.width * 0.20
-        case 3: return size.width * 0.72
-        default: return size.width * 0.5
-        }
-    }
-
-    private func photoY(index: Int, size: CGSize) -> CGFloat {
-        switch index {
-        case 0: return size.height * 0.38
-        case 1: return size.height * 0.28
-        case 2: return size.height * 0.72
-        case 3: return size.height * 0.72
-        default: return size.height * 0.5
-        }
     }
 }
 

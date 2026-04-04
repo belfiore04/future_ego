@@ -65,6 +65,8 @@ private struct DayTimelineView: View {
                         if let imageURL = item.image {
                             MemoryAsyncImage(url: imageURL)
                                 .aspectRatio(4 / 3, contentMode: .fill)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 180)
                                 .clipped()
                                 .cornerRadius(8)
                                 .rotationEffect(.degrees(item.rotate ?? 0))

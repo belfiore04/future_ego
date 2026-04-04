@@ -18,76 +18,45 @@ struct CategoryDetailView: View {
     // MARK: - Body
 
     var body: some View {
-        VStack(spacing: 0) {
-            // Navigation bar
-            navBar
-
-            // Title area
-            titleSection
-
-            // Time range picker
-            timeRangePicker
-                .padding(.horizontal, 24)
-                .padding(.bottom, 12)
-
-            // Scrollable content
+        NavigationStack {
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(spacing: 16) {
+                    // Title area
+                    titleSection
+
+                    // Time range picker
+                    timeRangePicker
+
                     chartCard
                     highlightsCard
                 }
-                .padding(.horizontal, 24)
+                .padding(.horizontal, 20)
                 .padding(.bottom, 40)
             }
-        }
-        .background(Color(UIColor.systemGroupedBackground))
-        .navigationBarBackButtonHidden(true)
-        .toolbar(.hidden, for: .navigationBar)
-    }
-
-    // MARK: - Navigation Bar
-
-    private var navBar: some View {
-        HStack {
-            Button {
-                dismiss()
-            } label: {
-                HStack(spacing: 4) {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 17, weight: .medium))
-                    Text("返回")
-                        .font(.system(size: 17, weight: .medium))
+            .background(Color(UIColor.systemGroupedBackground))
+            .navigationTitle("\(category.icon) \(category.label)")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("关闭") {
+                        dismiss()
+                    }
+                    .foregroundColor(backButtonColor)
                 }
-                .foregroundColor(backButtonColor)
             }
-
-            Spacer()
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 8)
-        .padding(.bottom, 4)
     }
 
     // MARK: - Title Section
 
     private var titleSection: some View {
         VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 8) {
-                Text(category.icon)
-                    .font(.system(size: 32))
-
-                Text(category.label)
-                    .font(.system(size: 28, weight: .bold))
-                    .foregroundColor(.black)
-            }
-
             Text(timeRangeLabel)
                 .font(.system(size: 15))
                 .foregroundColor(subtitleColor)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 24)
-        .padding(.bottom, 12)
+        .padding(.top, 4)
     }
 
     // MARK: - Time Range Label

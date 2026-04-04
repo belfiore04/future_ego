@@ -6,6 +6,8 @@ struct CategoryDetailView: View {
     let category: CategoryCard
     @Environment(\.dismiss) private var dismiss
     @State private var timeRange: TimeRange = .week
+    @State private var showShareSheet = false
+    @State private var shareImage: UIImage?
 
     // MARK: - Design Tokens
 
@@ -42,6 +44,11 @@ struct CategoryDetailView: View {
                         dismiss()
                     }
                     .foregroundColor(backButtonColor)
+                }
+            }
+            .sheet(isPresented: $showShareSheet) {
+                if let image = shareImage {
+                    ShareSheetView(items: [image])
                 }
             }
         }
@@ -140,27 +147,25 @@ struct CategoryDetailView: View {
 
                 Spacer()
 
-                // Share button for memory category
-                if category.id == .memory {
-                    Button {
-                        // Share action placeholder
-                    } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: "square.and.arrow.up")
-                                .font(.system(size: 14))
-                            Text("分享")
-                                .font(.system(size: 14, weight: .medium))
-                        }
-                        .foregroundColor(category.color)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(
-                            Capsule()
-                                .fill(category.color.opacity(0.08))
-                        )
+                // Share button
+                Button {
+                    captureAndShare()
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "square.and.arrow.up")
+                            .font(.system(size: 14))
+                        Text("分享")
+                            .font(.system(size: 14, weight: .medium))
                     }
-                    .buttonStyle(.plain)
+                    .foregroundColor(category.color)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(
+                        Capsule()
+                            .fill(category.color.opacity(0.08))
+                    )
                 }
+                .buttonStyle(.plain)
             }
 
             // Chart content with animation
@@ -249,6 +254,73 @@ struct CategoryDetailView: View {
             .clipShape(RoundedRectangle(cornerRadius: 16))
             .animation(.easeInOut(duration: 0.3), value: timeRange)
         }
+    }
+
+    // MARK: - Share
+
+    @MainActor
+    private func captureAndShare() {
+        let renderer = ImageRenderer(content: shareableContent)
+        renderer.scale = UIScreen.main.scale
+        if let image = renderer.uiImage {
+            shareImage = image
+            showShareSheet = true
+        }
+    }
+
+    @ViewBuilder
+    private var shareableContent: some View {
+        VStack(spacing: 16) {
+            // Header
+            HStack(spacing: 8) {
+                Text(category.icon)
+                    .font(.system(size: 20))
+                Text("\(category.label)数据")
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundColor(.black)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Text(timeRangeLabel)
+                .font(.system(size: 15))
+                .foregroundColor(subtitleColor)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            // Chart
+            chartContent
+
+            // Highlights
+            VStack(alignment: .leading, spacing: 8) {
+                Text("提要")
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundColor(.black)
+
+                ForEach(Array(currentHighlights.enumerated()), id: \.offset) { _, text in
+                    HStack(alignment: .top, spacing: 10) {
+                        Circle()
+                            .fill(category.color)
+                            .frame(width: 6, height: 6)
+                            .padding(.top, 7)
+
+                        Text(text)
+                            .font(.system(size: 15))
+                            .foregroundColor(bodyTextColor)
+                            .lineSpacing(4)
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            // Branding
+            Text("交联 FutureEgo")
+                .font(.system(size: 13, weight: .medium))
+                .foregroundColor(subtitleColor)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+                .padding(.top, 4)
+        }
+        .padding(20)
+        .background(Color.white)
+        .frame(width: 375)
     }
 
     // MARK: - Helpers

@@ -1,4 +1,5 @@
 import SwiftUI
+import PhotosUI
 
 // MARK: - ProfileTabView
 
@@ -6,12 +7,14 @@ struct ProfileTabView: View {
     // MARK: - User Profile Persistence
     @AppStorage("user_nickname") private var nickname = "用户"
     @AppStorage("user_motto") private var motto = "每天进步一点点"
+    @AppStorage("user_avatar_filename") private var avatarFileName = ""
 
     // MARK: - Animation State
     @State private var appeared = false
+
+    // MARK: - Profile Edit State
     @State private var showEditProfile = false
-    @State private var editNickname = ""
-    @State private var editMotto = ""
+    @State private var avatarImage: UIImage? = nil
 
     // MARK: - Stats Data
 
@@ -28,34 +31,63 @@ struct ProfileTabView: View {
     // MARK: - Body
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                // MARK: Header "我的"
-                HStack {
-                    Text("我的")
-                        .font(.system(size: 28, weight: .bold))
-                        .foregroundColor(.black)
-                    Spacer()
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 0) {
+                    // MARK: Header "我的"
+                    HStack {
+                        Text("我的")
+                            .font(.system(size: 28, weight: .bold))
+                            .foregroundColor(.black)
+                        Spacer()
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.top, 8)
+                    .padding(.bottom, 2)
+
+                    // MARK: Avatar & Name (tappable to edit)
+                    Button {
+                        showEditProfile = true
+                    } label: {
+                        avatarSection
+                    }
+                    .buttonStyle(.plain)
+
+                    // MARK: Stats Row
+                    statsRow
+
+                    // MARK: Settings List
+                    settingsList
                 }
-                .padding(.horizontal, 24)
-                .padding(.top, 8)
-                .padding(.bottom, 2)
-
-                // MARK: Avatar & Name
-                avatarSection
-
-                // MARK: Stats Row
-                statsRow
-
-                // MARK: Settings List
-                settingsList
+                .padding(.bottom, 100)
             }
-            .padding(.bottom, 100)
+            .onAppear {
+                loadAvatarFromDisk()
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                    appeared = true
+                }
+            }
+            .sheet(isPresented: $showEditProfile) {
+                ProfileEditSheet(
+                    nickname: $nickname,
+                    motto: $motto,
+                    avatarImage: $avatarImage,
+                    avatarFileName: $avatarFileName
+                )
+            }
         }
-        .onAppear {
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
-                appeared = true
-            }
+    }
+
+    // MARK: - Load Avatar from Disk
+
+    private func loadAvatarFromDisk() {
+        guard !avatarFileName.isEmpty else { return }
+        let url = FileManager.default
+            .urls(for: .documentDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent(avatarFileName)
+        if let data = try? Data(contentsOf: url),
+           let img = UIImage(data: data) {
+            avatarImage = img
         }
     }
 
@@ -63,22 +95,31 @@ struct ProfileTabView: View {
 
     private var avatarSection: some View {
         VStack(spacing: 0) {
-            // Avatar circle with gradient
+            // Avatar circle with gradient or photo
             ZStack {
-                Circle()
-                    .fill(
-                        LinearGradient(
-                            colors: [Color(hex: "34C759"), Color(hex: "30D158")],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
+                if let img = avatarImage {
+                    Image(uiImage: img)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 72, height: 72)
+                        .clipShape(Circle())
+                        .shadow(color: Color(hex: "34C759").opacity(0.3), radius: 8, x: 0, y: 4)
+                } else {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: [Color(hex: "34C759"), Color(hex: "30D158")],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
                         )
-                    )
-                    .frame(width: 72, height: 72)
-                    .shadow(color: Color(hex: "34C759").opacity(0.3), radius: 8, x: 0, y: 4)
+                        .frame(width: 72, height: 72)
+                        .shadow(color: Color(hex: "34C759").opacity(0.3), radius: 8, x: 0, y: 4)
 
-                Text(String(nickname.prefix(1)))
-                    .font(.system(size: 28, weight: .semibold))
-                    .foregroundColor(.white)
+                    Text(String(nickname.prefix(1)))
+                        .font(.system(size: 28, weight: .semibold))
+                        .foregroundColor(.white)
+                }
             }
 
             // User name
@@ -93,42 +134,23 @@ struct ProfileTabView: View {
                 .foregroundColor(Color(hex: "8E8E93"))
                 .padding(.top, 4)
 
-            // Edit profile button
-            Button {
-                editNickname = nickname
-                editMotto = motto
-                showEditProfile = true
-            } label: {
-                Text("编辑资料")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(Color(hex: "34C759"))
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 6)
-                    .background(
-                        Capsule()
-                            .stroke(Color(hex: "34C759"), lineWidth: 1)
-                    )
-            }
-            .padding(.top, 10)
+            // Edit profile hint
+            Text("编辑资料")
+                .font(.system(size: 13, weight: .medium))
+                .foregroundColor(Color(hex: "34C759"))
+                .padding(.horizontal, 16)
+                .padding(.vertical, 6)
+                .background(
+                    Capsule()
+                        .stroke(Color(hex: "34C759"), lineWidth: 1)
+                )
+                .padding(.top, 10)
         }
         .padding(.top, 16)
         .padding(.bottom, 24)
         .frame(maxWidth: .infinity)
         .opacity(appeared ? 1 : 0)
         .offset(y: appeared ? 0 : 12)
-        .alert("编辑资料", isPresented: $showEditProfile) {
-            TextField("昵称", text: $editNickname)
-            TextField("座右铭", text: $editMotto)
-            Button("取消", role: .cancel) { }
-            Button("保存") {
-                let trimmedNickname = editNickname.trimmingCharacters(in: .whitespaces)
-                let trimmedMotto = editMotto.trimmingCharacters(in: .whitespaces)
-                if !trimmedNickname.isEmpty { nickname = trimmedNickname }
-                if !trimmedMotto.isEmpty { motto = trimmedMotto }
-            }
-        } message: {
-            Text("修改你的昵称和座右铭")
-        }
     }
 
     // MARK: - Stats Row
@@ -184,7 +206,23 @@ struct ProfileTabView: View {
             // Card with rows
             VStack(spacing: 0) {
                 ForEach(Array(settingsItems.enumerated()), id: \.offset) { index, item in
-                    settingsRow(title: item)
+                    NavigationLink(destination: settingsDestination(for: item)) {
+                        HStack {
+                            Text(item)
+                                .font(.system(size: 16))
+                                .foregroundColor(.black)
+
+                            Spacer()
+
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(Color(hex: "C7C7CC"))
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 14)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
 
                     // Divider (not after the last item)
                     if index < settingsItems.count - 1 {
@@ -206,21 +244,24 @@ struct ProfileTabView: View {
         .padding(.horizontal, 24)
     }
 
-    private func settingsRow(title: String) -> some View {
-        HStack {
-            Text(title)
-                .font(.system(size: 16))
-                .foregroundColor(.black)
+    // MARK: - Settings Destination Router
 
-            Spacer()
-
-            Image(systemName: "chevron.right")
-                .font(.system(size: 14, weight: .medium))
-                .foregroundColor(Color(hex: "C7C7CC"))
+    @ViewBuilder
+    private func settingsDestination(for item: String) -> some View {
+        switch item {
+        case "通知提醒":
+            NotificationSettingsView()
+        case "日程偏好":
+            SchedulePreferencesView()
+        case "AI Coach 设置":
+            AICoachSettingsView()
+        case "数据同步":
+            DataSyncView()
+        case "关于":
+            AboutView()
+        default:
+            Text(item)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
-        .contentShape(Rectangle())
     }
 }
 

@@ -217,33 +217,39 @@ private struct MiniChartPreview: View {
 
     // Memory: placeholder collage (no network loading on main page)
     private var memoryMini: some View {
-        let accent = Color(hex: "FF2D55")
-        let rotations: [Double] = [-3, 5, -2, 4]
-        return GeometryReader { geo in
+        GeometryReader { geo in
             ZStack {
-                ForEach(0..<4, id: \.self) { i in
-                    RoundedRectangle(cornerRadius: 6)
-                        .fill(accent.opacity(0.08 + Double(i) * 0.04))
-                        .overlay(
-                            Image(systemName: "photo")
-                                .font(.system(size: i == 0 ? 16 : 12))
-                                .foregroundColor(accent.opacity(0.3))
-                        )
-                        .frame(
-                            width: i == 0 ? geo.size.width * 0.45 : geo.size.width * 0.30,
-                            height: i == 0 ? geo.size.height * 0.65 : geo.size.height * 0.42
-                        )
-                        .cornerRadius(6)
-                        .rotationEffect(.degrees(rotations[i]))
-                        .shadow(color: .black.opacity(0.08), radius: 2, y: 1)
-                        .position(
-                            x: [geo.size.width * 0.28, geo.size.width * 0.72, geo.size.width * 0.20, geo.size.width * 0.72][i],
-                            y: [geo.size.height * 0.38, geo.size.height * 0.28, geo.size.height * 0.72, geo.size.height * 0.72][i]
-                        )
-                }
+                memoryPlaceholder(index: 0, size: geo.size)
+                memoryPlaceholder(index: 1, size: geo.size)
+                memoryPlaceholder(index: 2, size: geo.size)
+                memoryPlaceholder(index: 3, size: geo.size)
             }
         }
         .clipped()
+    }
+
+    private func memoryPlaceholder(index: Int, size: CGSize) -> some View {
+        let accent = Color(hex: "FF2D55")
+        let rotations: [Double] = [-3, 5, -2, 4]
+        let xFractions: [CGFloat] = [0.28, 0.72, 0.20, 0.72]
+        let yFractions: [CGFloat] = [0.38, 0.28, 0.72, 0.72]
+        let w: CGFloat = index == 0 ? size.width * 0.45 : size.width * 0.30
+        let h: CGFloat = index == 0 ? size.height * 0.65 : size.height * 0.42
+
+        return RoundedRectangle(cornerRadius: 6)
+            .fill(accent.opacity(0.08 + Double(index) * 0.04))
+            .overlay(
+                Image(systemName: "photo")
+                    .font(.system(size: index == 0 ? 16 : 12))
+                    .foregroundColor(accent.opacity(0.3))
+            )
+            .frame(width: w, height: h)
+            .rotationEffect(.degrees(rotations[index]))
+            .shadow(color: .black.opacity(0.08), radius: 2, y: 1)
+            .position(
+                x: size.width * xFractions[index],
+                y: size.height * yFractions[index]
+            )
     }
 }
 

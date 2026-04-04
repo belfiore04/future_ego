@@ -91,6 +91,7 @@ private struct CategoryCardView: View {
             // Mini chart preview
             MiniChartPreview(categoryId: card.id)
                 .frame(height: 100)
+                .clipped()
                 .frame(maxWidth: .infinity)
                 .background(
                     RoundedRectangle(cornerRadius: 12)
@@ -244,6 +245,7 @@ private struct MiniChartPreview: View {
                 }
             }
         }
+        .clipped()
     }
 
     private func photoX(index: Int, size: CGSize) -> CGFloat {

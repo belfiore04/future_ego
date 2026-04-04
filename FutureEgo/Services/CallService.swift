@@ -39,34 +39,12 @@ class CallService: NSObject, ObservableObject {
 
     // MARK: - Outgoing Call (user taps phone button)
 
+    /// User-initiated call — directly show overlay, no CallKit needed.
     func startCall() {
         let uuid = UUID()
         callUUID = uuid
-
-        if isSimulator {
-            // Bypass CallKit on simulator
-            configureAudioSession()
-            isCallActive = true
-            return
-        }
-
-        let handle = CXHandle(type: .generic, value: "Future Ego")
-        let startAction = CXStartCallAction(call: uuid, handle: handle)
-        startAction.isVideo = false
-        startAction.contactIdentifier = "AI Coach"
-
-        let transaction = CXTransaction(action: startAction)
-        callController?.request(transaction) { error in
-            if let error {
-                print("Start call error: \(error)")
-            }
-        }
-
-        // Mark as connected after brief delay (simulates "dialing")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
-            guard let self else { return }
-            self.provider?.reportOutgoingCall(with: uuid, connectedAt: nil)
-        }
+        configureAudioSession()
+        isCallActive = true
     }
 
     // MARK: - Incoming Call (triggered by morning/evening alarm)
@@ -100,19 +78,20 @@ class CallService: NSObject, ObservableObject {
     func endCall() {
         guard let uuid = callUUID else { return }
 
-        if isSimulator {
-            isCallActive = false
-            callUUID = nil
-            return
-        }
-
-        let endAction = CXEndCallAction(call: uuid)
-        let transaction = CXTransaction(action: endAction)
-        callController?.request(transaction) { error in
-            if let error {
-                print("End call error: \(error)")
+        // If CallKit is managing this call (incoming), end via transaction
+        if !isSimulator, provider != nil {
+            let endAction = CXEndCallAction(call: uuid)
+            let transaction = CXTransaction(action: endAction)
+            callController?.request(transaction) { error in
+                if let error {
+                    print("End call error: \(error)")
+                }
             }
         }
+
+        // Always reset local state immediately
+        isCallActive = false
+        callUUID = nil
     }
 }
 

@@ -269,9 +269,11 @@ struct CallingOverlay: View {
 
     private func startCall() {
         // AI greeting after 1s
+        let greetingText = "你好！我是你的 AI Coach，今天想聊些什么？"
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
             withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                addMessage(role: .ai, text: "你好！我是你的 AI Coach，今天想聊些什么？")
+                addMessage(role: .ai, text: greetingText)
+                PersistenceService.shared.saveChatMessage(role: "ai", text: greetingText)
             }
         }
     }
@@ -282,6 +284,7 @@ struct CallingOverlay: View {
 
         withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
             addMessage(role: .user, text: trimmed)
+            PersistenceService.shared.saveChatMessage(role: "user", text: trimmed)
         }
         inputText = ""
 
@@ -301,13 +304,16 @@ struct CallingOverlay: View {
                     withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
                         isThinking = false
                         addMessage(role: .ai, text: reply)
+                        PersistenceService.shared.saveChatMessage(role: "ai", text: reply)
                     }
                 }
             } catch {
+                let errorText = "抱歉，网络出了点问题，请稍后再试 😅"
                 await MainActor.run {
                     withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
                         isThinking = false
-                        addMessage(role: .ai, text: "抱歉，网络出了点问题，请稍后再试 😅")
+                        addMessage(role: .ai, text: errorText)
+                        PersistenceService.shared.saveChatMessage(role: "ai", text: errorText)
                     }
                 }
             }

@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 
 @main
 struct FutureEgoApp: App {
@@ -7,5 +8,10 @@ struct FutureEgoApp: App {
         WindowGroup {
             ContentView()
         }
+        .modelContainer(for: [
+            PersistedScheduleStatus.self,
+            PersistedSticker.self,
+            PersistedChatMessage.self,
+        ])
     }
 }

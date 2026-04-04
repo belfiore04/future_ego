@@ -10,6 +10,9 @@ struct CurrentTabView: View {
     /// Called when the user taps the "AI Coach" toolbar button.
     var onStartCalling: (() -> Void)? = nil
 
+    // MARK: - Weather
+    @StateObject private var weather = WeatherService.shared
+
     // MARK: - Camera & stickers state
     @State private var showCamera = false
     @State private var capturedImage: UIImage? = nil
@@ -70,6 +73,10 @@ struct CurrentTabView: View {
             guard let img = newImage else { return }
             processImage(img)
         }
+        .onAppear {
+            weather.requestLocation()
+            loadPersistedStickers()
+        }
     }
 
     // MARK: - Floating Liquid Glass Buttons
@@ -113,6 +120,7 @@ struct CurrentTabView: View {
             do {
                 let segmented = try await ImageSegmentationService.segmentForeground(from: image)
                 await MainActor.run {
+                    let _ = PersistenceService.shared.saveSticker(image: segmented)
                     stickers.append(StickerItem(image: segmented))
                     isProcessing = false
                     capturedImage = nil
@@ -120,11 +128,22 @@ struct CurrentTabView: View {
             } catch {
                 await MainActor.run {
                     // Fallback: use the original image when segmentation fails.
+                    let _ = PersistenceService.shared.saveSticker(image: image)
                     stickers.append(StickerItem(image: image))
                     isProcessing = false
                     capturedImage = nil
                 }
             }
+        }
+    }
+
+    // MARK: - Sticker persistence
+
+    private func loadPersistedStickers() {
+        let persisted = PersistenceService.shared.loadStickers()
+        stickers = persisted.compactMap { p in
+            guard let img = PersistenceService.shared.loadStickerImage(p) else { return nil }
+            return StickerItem(image: img)
         }
     }
 
@@ -172,7 +191,7 @@ struct CurrentTabView: View {
         formatter.locale = Locale(identifier: "zh_CN")
         formatter.dateFormat = "EEEE"
         let weekday = formatter.string(from: now)
-        return "\(weekday) \u{00B7} 北京 \u{00B7} 晴"
+        return "\(weekday) \u{00B7} \(weather.cityName) \u{00B7} \(weather.weatherDescription)"
     }
 }
 

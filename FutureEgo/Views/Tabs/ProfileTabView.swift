@@ -3,9 +3,15 @@ import SwiftUI
 // MARK: - ProfileTabView
 
 struct ProfileTabView: View {
-    // MARK: - Animation State
+    // MARK: - User Profile Persistence
+    @AppStorage("user_nickname") private var nickname = "用户"
+    @AppStorage("user_motto") private var motto = "每天进步一点点"
 
+    // MARK: - Animation State
     @State private var appeared = false
+    @State private var showEditProfile = false
+    @State private var editNickname = ""
+    @State private var editMotto = ""
 
     // MARK: - Stats Data
 
@@ -70,28 +76,59 @@ struct ProfileTabView: View {
                     .frame(width: 72, height: 72)
                     .shadow(color: Color(hex: "34C759").opacity(0.3), radius: 8, x: 0, y: 4)
 
-                Text("U")
+                Text(String(nickname.prefix(1)))
                     .font(.system(size: 28, weight: .semibold))
                     .foregroundColor(.white)
             }
 
             // User name
-            Text("用户")
+            Text(nickname)
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundColor(.black)
                 .padding(.top, 12)
 
             // Motto
-            Text("每天进步一点点")
+            Text(motto)
                 .font(.system(size: 14))
                 .foregroundColor(Color(hex: "8E8E93"))
                 .padding(.top, 4)
+
+            // Edit profile button
+            Button {
+                editNickname = nickname
+                editMotto = motto
+                showEditProfile = true
+            } label: {
+                Text("编辑资料")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(Color(hex: "34C759"))
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 6)
+                    .background(
+                        Capsule()
+                            .stroke(Color(hex: "34C759"), lineWidth: 1)
+                    )
+            }
+            .padding(.top, 10)
         }
         .padding(.top, 16)
         .padding(.bottom, 24)
         .frame(maxWidth: .infinity)
         .opacity(appeared ? 1 : 0)
         .offset(y: appeared ? 0 : 12)
+        .alert("编辑资料", isPresented: $showEditProfile) {
+            TextField("昵称", text: $editNickname)
+            TextField("座右铭", text: $editMotto)
+            Button("取消", role: .cancel) { }
+            Button("保存") {
+                let trimmedNickname = editNickname.trimmingCharacters(in: .whitespaces)
+                let trimmedMotto = editMotto.trimmingCharacters(in: .whitespaces)
+                if !trimmedNickname.isEmpty { nickname = trimmedNickname }
+                if !trimmedMotto.isEmpty { motto = trimmedMotto }
+            }
+        } message: {
+            Text("修改你的昵称和座右铭")
+        }
     }
 
     // MARK: - Stats Row

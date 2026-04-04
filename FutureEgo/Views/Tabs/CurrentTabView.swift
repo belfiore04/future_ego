@@ -13,7 +13,6 @@ struct CurrentTabView: View {
     // MARK: - Design tokens
     private let accentGreen = Color(hex: "34C759")
     private let grayText = Color(hex: "8E8E93")
-    private let toolbarGray = Color(hex: "3A3A3C")
 
     /// Current event derived from the schedule.
     private var currentEvent: CurrentEventData {
@@ -43,27 +42,43 @@ struct CurrentTabView: View {
                 CurrentEventView(event: currentEvent)
             }
         }
-        .safeAreaInset(edge: .bottom) {
-            HStack {
-                Button {
-                    // TODO: camera action
-                } label: {
-                    Label("拍照", systemImage: "camera")
-                }
-                .tint(toolbarGray)
+        .overlay(alignment: .bottomTrailing) {
+            floatingButtons
+                .padding(.trailing, 20)
+                .padding(.bottom, 24)
+        }
+    }
 
-                Spacer()
+    // MARK: - Floating Liquid Glass Buttons
 
-                Button {
-                    onStartCalling?()
-                } label: {
-                    Label("AI Coach", systemImage: "phone")
-                }
-                .tint(accentGreen)
+    private var floatingButtons: some View {
+        VStack(spacing: 16) {
+            glassButton(systemImage: "camera") {
+                // TODO: camera action
             }
-            .padding(.horizontal, 24)
-            .padding(.vertical, 10)
-            .background(.bar)
+            glassButton(systemImage: "phone") {
+                onStartCalling?()
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func glassButton(systemImage: String, action: @escaping () -> Void) -> some View {
+        if #available(iOS 26, *) {
+            Button(action: action) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 20))
+            }
+            .buttonStyle(.glass)
+        } else {
+            Button(action: action) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 20))
+                    .foregroundStyle(.primary)
+                    .frame(width: 47, height: 44)
+                    .background(.ultraThinMaterial, in: Circle())
+                    .shadow(color: .black.opacity(0.1), radius: 8, y: 4)
+            }
         }
     }
 

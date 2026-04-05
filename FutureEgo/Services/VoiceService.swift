@@ -38,6 +38,17 @@ final class VoiceService: ObservableObject {
     /// Thread-safe flag to pause ASR while TTS is playing (accessed from audio tap thread).
     private nonisolated(unsafe) var isPausedForTTS = false
 
+    /// Consecutive frame counter for barge-in detection (accessed from audio tap thread).
+    private nonisolated(unsafe) var bargeInFrames = 0
+
+    /// RMS threshold for barge-in detection.
+    /// Float PCM samples are in [-1, 1]. Normal speech RMS ≈ 0.05-0.2.
+    private static let bargeInRMSThreshold: Float = 0.08
+
+    /// Number of consecutive frames above threshold required to trigger barge-in.
+    /// Each frame ≈ 100ms, so 2 frames = ~200ms of sustained voice.
+    private static let bargeInFrameCount = 2
+
     private init() {}
 
     // MARK: - Start Listening
@@ -92,10 +103,29 @@ final class VoiceService: ObservableObject {
         let bufferSize = AVAudioFrameCount(hwFormat.sampleRate * 0.1)
 
         // Capture unowned reference for the realtime audio callback.
-        // isPausedForTTS is nonisolated(unsafe) so it can be read from the audio thread.
+        // isPausedForTTS / bargeInFrames are nonisolated(unsafe).
         inputNode.installTap(onBus: 0, bufferSize: bufferSize, format: hwFormat) { [weak self, weak asr] buffer, _ in
             guard let self else { return }
-            guard let asr, !self.isPausedForTTS else { return }
+
+            // --- Barge-in detection during TTS playback ---
+            if self.isPausedForTTS {
+                let rms = Self.computeRMS(buffer: buffer)
+                if rms > Self.bargeInRMSThreshold {
+                    self.bargeInFrames += 1
+                    if self.bargeInFrames >= Self.bargeInFrameCount {
+                        self.bargeInFrames = 0
+                        Task { @MainActor [weak self] in
+                            self?.handleBargeIn()
+                        }
+                    }
+                } else {
+                    self.bargeInFrames = 0
+                }
+                return
+            }
+
+            // --- Normal ASR forwarding ---
+            guard let asr else { return }
 
             // Convert hardware format -> 16kHz mono PCM
             let frameCapacity = AVAudioFrameCount(
@@ -172,6 +202,12 @@ final class VoiceService: ObservableObject {
 
         await tts.synthesize(text: text)
 
+        // If barge-in cancelled us during synthesis, skip playback
+        guard isSpeaking else {
+            ttsService = nil
+            return
+        }
+
         // Play collected audio
         if !audioData.isEmpty {
             await playPCMAudio(data: audioData, sampleRate: 24000)
@@ -191,6 +227,37 @@ final class VoiceService: ObservableObject {
         ttsService = nil
         isSpeaking = false
         isPausedForTTS = false
+    }
+
+    // MARK: - Barge-In
+
+    /// Called from the audio tap thread (via MainActor hop) when sustained voice
+    /// activity is detected during TTS playback. Interrupts TTS and lets ASR
+    /// capture the user's new utterance.
+    private func handleBargeIn() {
+        guard isSpeaking else { return }
+        stopSpeaking()
+        // ASR is already connected and the tap is installed — next buffer will
+        // flow through the normal path since isPausedForTTS is now false.
+    }
+
+    /// Compute RMS amplitude of a float PCM buffer. Returns 0 for empty/invalid buffers.
+    private static func computeRMS(buffer: AVAudioPCMBuffer) -> Float {
+        guard let channelData = buffer.floatChannelData else { return 0 }
+        let frameLength = Int(buffer.frameLength)
+        let channels = Int(buffer.format.channelCount)
+        guard frameLength > 0, channels > 0 else { return 0 }
+
+        var sum: Float = 0
+        for channel in 0..<channels {
+            let data = channelData[channel]
+            for i in 0..<frameLength {
+                let s = data[i]
+                sum += s * s
+            }
+        }
+        let mean = sum / Float(frameLength * channels)
+        return mean.squareRoot()
     }
 
     // MARK: - Stop All

@@ -21,7 +21,7 @@ actor AIService {
 
     private let apiKey = "sk-a80c8b8cfc0049f49a8213120f0bd6c8"
     private let baseURL = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
-    private let model = "qwen-plus"
+    private let model = "deepseek-v3.2-exp"
 
     // MARK: - Dynamic System Prompt
 
@@ -139,10 +139,14 @@ actor AIService {
         如果一条消息涉及多个操作，优先调用最直接的函数。\
         对于「取消所有」这种场景，调用 delete_schedule 即可，title 用概括性描述。
 
-        ## 回复风格
-        - 调用函数时，同时给一句简短的话作为回应
-        - 不要在回复中暴露函数调用的技术细节
-        - 保持温暖、积极、有行动力的语气
+        ## 回复风格（语音电话场景，极其重要）
+        - 当前是**语音电话**，用户用耳朵听你说话
+        - 每次回复**最多 1-2 句话，30 个字以内**
+        - 口语化、自然，不要用书面语
+        - 禁止：列表、序号、Markdown、括号注释、长解释
+        - 调用函数时也只说一句简短确认，如「好，加上了」「收到」
+        - 不要暴露任何函数/技术细节
+        - 如果用户只是闲聊或表达情绪，用共情的一句话回应，不要说教
         """
     }
 
@@ -445,7 +449,7 @@ actor AIService {
             "tools": toolsDefinition,
             "tool_choice": "auto",
             "temperature": 0.7,
-            "max_tokens": 500
+            "max_tokens": 150
         ]
     }
 

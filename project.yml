@@ -19,14 +19,25 @@ targets:
     platform: iOS
     sources:
       - FutureEgo
-    settings:
-      base:
-        INFOPLIST_KEY_CFBundleDisplayName: "交联"
-        INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
-        INFOPLIST_KEY_UILaunchScreen_Generation: true
-        INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "需要获取您的位置来显示当地天气"
-        INFOPLIST_KEY_NSCameraUsageDescription: "需要使用相机拍照来创建贴纸"
-        INFOPLIST_KEY_NSPhotoLibraryUsageDescription: "需要访问相册来选择照片"
-        INFOPLIST_KEY_NSMicrophoneUsageDescription: "需要使用麦克风进行 AI 语音通话"
-        INFOPLIST_KEY_UIBackgroundModes: "voip"
-        GENERATE_INFOPLIST_FILE: true
+    # Managed Info.plist — XcodeGen writes these keys to
+    # FutureEgo/Info.plist on every `xcodegen` run. We moved off the
+    # auto-generated Info.plist (GENERATE_INFOPLIST_FILE + INFOPLIST_KEY_*)
+    # because nested dict keys like `UILaunchScreen.UIColorName` aren't
+    # expressible via the flat INFOPLIST_KEY_ namespace.
+    info:
+      path: FutureEgo/Info.plist
+      properties:
+        CFBundleDisplayName: "交联"
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        NSLocationWhenInUseUsageDescription: "需要获取您的位置来显示当地天气"
+        NSCameraUsageDescription: "需要使用相机拍照来创建贴纸"
+        NSPhotoLibraryUsageDescription: "需要访问相册来选择照片"
+        NSMicrophoneUsageDescription: "需要使用麦克风进行 AI 语音通话"
+        UIBackgroundModes:
+          - voip
+        # Launch screen: solid brand-green background, shown instantly by
+        # iOS from app-icon tap until the first SwiftUI frame renders.
+        # On Debug / free-cert this covers the 6-7 second cold start.
+        UILaunchScreen:
+          UIColorName: LaunchBackground

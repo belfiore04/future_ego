@@ -114,16 +114,24 @@ struct DetailPageShell<ContentCardBody: View>: View {
 
             // 6a. Giant time @ (41, 315). Positioned on top of the
             // content card so it visually straddles the Hero↔content
-            // boundary (the baseline sits below y=270).
+            // boundary (the baseline sits below y=270). The maxWidth
+            // frame (340 content card - 2×16 padding = 308) gives
+            // HugeTimeDisplay's minimumScaleFactor an anchor to shrink
+            // against for long timers like "1:23:21".
             HugeTimeDisplay(timeString: timeString, palette: palette)
+                .frame(maxWidth: 308, alignment: .leading)
                 .offset(x: 41, y: 315)
 
-            // 6b. Activity name @ (41, 403) 22pt SF Pro Bold
+            // 6b. Activity name @ (41, 403) 22pt SF Pro Bold. maxWidth
+            // 308 clamps long names like "Diaz · Need韩国创意料理（韩餐）"
+            // within the content card and gives minimumScaleFactor an
+            // anchor width to trigger on.
             Text(activityName)
                 .font(.system(size: 22, weight: .bold))
                 .foregroundStyle(palette.primary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
+                .frame(maxWidth: 308, alignment: .leading)
                 .offset(x: 41, y: 403)
 
             // 6c. Location line @ (41, 451) 15pt SF Pro regular black

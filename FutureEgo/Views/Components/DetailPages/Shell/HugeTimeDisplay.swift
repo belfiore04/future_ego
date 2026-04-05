@@ -34,8 +34,8 @@ struct HugeTimeDisplay: View {
             .fontWeight(.bold)
             .foregroundStyle(palette.primary)
             .lineLimit(1)
-            .minimumScaleFactor(0.6)
-            .fixedSize(horizontal: true, vertical: true)
+            .minimumScaleFactor(0.5)
+            .fixedSize(horizontal: false, vertical: true)
     }
 }
 

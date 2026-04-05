@@ -85,8 +85,10 @@ struct CurrentTabView: View {
             processImage(img)
         }
         .onAppear {
+            LaunchTrace.mark("CurrentTabView .onAppear (first frame visible)")
             weather.requestLocation()
             loadPersistedStickers()
+            LaunchTrace.mark("CurrentTabView .onAppear end")
         }
     }
 

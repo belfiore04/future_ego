@@ -26,6 +26,7 @@ class CallService: NSObject, ObservableObject {
 
     override init() {
         super.init()
+        LaunchTrace.mark("CallService.init begin")
 
         if !isSimulator {
             let config = CXProviderConfiguration()
@@ -33,11 +34,16 @@ class CallService: NSObject, ObservableObject {
             config.maximumCallsPerCallGroup = 1
             config.supportedHandleTypes = [.generic]
 
+            LaunchTrace.mark("CallService.init: before CXProvider alloc")
             let p = CXProvider(configuration: config)
+            LaunchTrace.mark("CallService.init: after CXProvider alloc")
             provider = p
             callController = CXCallController()
             p.setDelegate(self, queue: nil)
+            LaunchTrace.mark("CallService.init: after setDelegate")
         }
+
+        LaunchTrace.mark("CallService.init end")
     }
 
     // MARK: - Outgoing Call (user taps phone button)

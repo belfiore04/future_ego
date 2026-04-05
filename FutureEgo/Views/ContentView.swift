@@ -38,7 +38,12 @@ struct ContentView: View {
     /// Shared schedule state, mutated by AI function calls.
     @StateObject private var scheduleManager = ScheduleManager.shared
 
+    init() {
+        LaunchTrace.mark("ContentView.init")
+    }
+
     var body: some View {
+        let _ = LaunchTrace.mark("ContentView.body eval")
         TabView(selection: $activeTab) {
             CurrentTabView(
                 schedule: scheduleManager.schedule,

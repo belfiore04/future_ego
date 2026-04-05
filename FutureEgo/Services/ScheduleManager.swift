@@ -13,7 +13,9 @@ class ScheduleManager: ObservableObject {
     @Published var schedule: [ScheduleItem] = SampleData.schedule
     @Published var currentIndex: Int = SampleData.currentIndex
 
-    private init() {}
+    private init() {
+        LaunchTrace.mark("ScheduleManager.init (SampleData already built)")
+    }
 
     // MARK: - Snapshot for AI Context
 

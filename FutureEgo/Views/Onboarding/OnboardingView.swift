@@ -16,6 +16,7 @@ struct OnboardingView: View {
     @State private var generatedTraits: [String] = []
     @State private var generatedGreeting = ""
     @State private var generationStep = 0
+    @FocusState private var isVisionEditorFocused: Bool
 
     // MARK: - Design Tokens
 
@@ -166,6 +167,7 @@ struct OnboardingView: View {
                     .font(.system(size: 16))
                     .foregroundColor(.primary)
                     .scrollContentBackground(.hidden)
+                    .focused($isVisionEditorFocused)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 8)
             }
@@ -179,6 +181,14 @@ struct OnboardingView: View {
                     )
             )
             .padding(.horizontal, 24)
+            .toolbar {
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("完成") { isVisionEditorFocused = false }
+                        .foregroundColor(accentGreen)
+                        .fontWeight(.semibold)
+                }
+            }
 
             // Hint
             Text("💡 可以描述性格、习惯、生活方式、职业目标")

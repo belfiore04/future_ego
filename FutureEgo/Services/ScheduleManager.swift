@@ -9,12 +9,13 @@ import SwiftUI
 class ScheduleManager: ObservableObject {
     static let shared = ScheduleManager()
 
-    /// Current schedule list (initialized from SampleData, then mutated by user/AI).
-    @Published var schedule: [ScheduleItem] = SampleData.schedule
-    @Published var currentIndex: Int = SampleData.currentIndex
+    /// Current schedule list — starts empty on first launch; mutated by user/AI.
+    /// Previews that need demo data should pass `SampleData.schedule` explicitly.
+    @Published var schedule: [ScheduleItem] = []
+    @Published var currentIndex: Int = 0
 
     private init() {
-        LaunchTrace.mark("ScheduleManager.init (SampleData already built)")
+        LaunchTrace.mark("ScheduleManager.init (empty schedule)")
     }
 
     // MARK: - Snapshot for AI Context

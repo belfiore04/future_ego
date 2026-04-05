@@ -19,6 +19,9 @@ struct CurrentTabView: View {
     @State private var stickers: [StickerItem] = []
     @State private var isProcessing = false
 
+    // Pulsing coach-mark around phone button on first empty state.
+    @State private var hintPulse = false
+
     // MARK: - Design tokens
     private let accentGreen = Color(hex: "34C759")
     private let grayText = Color(hex: "8E8E93")
@@ -88,6 +91,7 @@ struct CurrentTabView: View {
             LaunchTrace.mark("CurrentTabView .onAppear (first frame visible)")
             weather.requestLocation()
             loadPersistedStickers()
+            hintPulse = true
             LaunchTrace.mark("CurrentTabView .onAppear end")
         }
     }
@@ -99,12 +103,14 @@ struct CurrentTabView: View {
             Image(systemName: "calendar.badge.plus")
                 .font(.system(size: 44))
                 .foregroundStyle(accentGreen.opacity(0.5))
-            Text("暂无日程")
+            Text("还没有日程")
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundColor(.primary)
-            Text("试试跟 AI Coach 说「帮我安排一下」")
+            Text("点右下角的电话键\n跟 AI Coach 说说今天打算做什么")
                 .font(.system(size: 14))
                 .foregroundColor(grayText)
+                .multilineTextAlignment(.center)
+                .lineSpacing(4)
         }
         .frame(maxWidth: .infinity)
         .padding(.top, 80)
@@ -119,6 +125,21 @@ struct CurrentTabView: View {
             }
             glassButton(systemImage: "phone") {
                 onStartCalling?()
+            }
+            .overlay {
+                // Pulsing ring coach mark: only when there are no scheduled
+                // items yet, to draw the user to the primary first action.
+                if schedule.isEmpty {
+                    Circle()
+                        .stroke(accentGreen.opacity(0.6), lineWidth: 2)
+                        .scaleEffect(hintPulse ? 1.6 : 1.0)
+                        .opacity(hintPulse ? 0.0 : 0.9)
+                        .animation(
+                            .easeOut(duration: 1.4).repeatForever(autoreverses: false),
+                            value: hintPulse
+                        )
+                        .allowsHitTesting(false)
+                }
             }
         }
     }

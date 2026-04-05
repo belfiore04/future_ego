@@ -218,8 +218,13 @@ class ScheduleManager: ObservableObject {
         // For `outing` we delegate to the new ReminderService API (implemented
         // by task-6). Keeping the call site stable — the signature is
         // documented in task-4/report.md so task-6 can land the impl.
-        if case .outing = detail {
-            ReminderService.shared.scheduleOutingReminders(for: newItem, scheduleId: newItem.id)
+        if case .outing(let outingDetail) = detail {
+            Task {
+                await ReminderService.shared.scheduleOutingReminders(
+                    for: outingDetail,
+                    scheduleId: newItem.id
+                )
+            }
         } else if let address = destinationAddress ?? destination, !address.isEmpty {
             // Preserve legacy smartReminders path for non-outing items that
             // still carry a location string — this keeps the existing

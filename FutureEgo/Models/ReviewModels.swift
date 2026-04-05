@@ -51,7 +51,7 @@ struct DietDetail {
     let highlights: [String]
 }
 
-// MARK: - OutingDetail
+// MARK: - OutingReviewDetail
 
 struct OutingChartEntry: Identifiable {
     let id = UUID()
@@ -59,7 +59,7 @@ struct OutingChartEntry: Identifiable {
     let places: Int
 }
 
-struct OutingDetail {
+struct OutingReviewDetail {
     let chartData: [OutingChartEntry]
     let totalPlaces: Int
     let totalDistance: String
@@ -120,7 +120,7 @@ struct MemoryDetail {
 
 struct TimeRangeData {
     let diet: DietDetail
-    let outing: OutingDetail
+    let outing: OutingReviewDetail
     let focus: FocusDetail
     let exercise: ExerciseDetail
     let memory: MemoryDetail
@@ -212,7 +212,7 @@ enum ReviewSampleData {
         ]
     )
 
-    private static let monthOuting = OutingDetail(
+    private static let monthOuting = OutingReviewDetail(
         chartData: [
             OutingChartEntry(day: "第1周", places: 4),
             OutingChartEntry(day: "第2周", places: 5),
@@ -313,7 +313,7 @@ enum ReviewSampleData {
         ]
     )
 
-    private static let weekOuting = OutingDetail(
+    private static let weekOuting = OutingReviewDetail(
         chartData: [
             OutingChartEntry(day: "周一", places: 1),
             OutingChartEntry(day: "周二", places: 0),
@@ -416,7 +416,7 @@ enum ReviewSampleData {
         ]
     )
 
-    private static let dayOuting = OutingDetail(
+    private static let dayOuting = OutingReviewDetail(
         chartData: [
             OutingChartEntry(day: "上午", places: 0),
             OutingChartEntry(day: "下午", places: 2),

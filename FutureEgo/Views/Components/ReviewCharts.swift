@@ -158,7 +158,7 @@ struct DietChartView: View {
 
 /// Single-series bar chart for outing data with top places tags.
 struct OutingChartView: View {
-    let data: OutingDetail
+    let data: OutingReviewDetail
 
     // MARK: - Design tokens
     private let barColor = Color(hex: "007AFF")
@@ -420,7 +420,7 @@ struct ExerciseChartView: View {
 
 #Preview("Outing Chart") {
     ScrollView {
-        OutingChartView(data: OutingDetail(
+        OutingChartView(data: OutingReviewDetail(
             chartData: [
                 OutingChartEntry(day: "Mon", places: 3),
                 OutingChartEntry(day: "Tue", places: 1),

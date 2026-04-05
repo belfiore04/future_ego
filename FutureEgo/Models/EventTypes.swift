@@ -1,96 +1,12 @@
 import SwiftUI
 
-// MARK: - CurrentEventData
-
-enum CurrentEventData {
-    case location(LocationEvent)
-    case todo(TodoEvent)
-    case eatOut(EatOutEvent)
-    case cook(CookEvent)
-    case delivery(DeliveryEvent)
-}
-
-// MARK: - LocationEvent
-
-struct LocationEvent: Identifiable {
-    let id = UUID()
-    let time: String
-    let endTime: String?
-    let name: String
-    let address: String
-    let cardTitle: String
-    let items: [String]
-}
-
-// MARK: - TodoEvent
-
-struct TodoEvent: Identifiable {
-    let id = UUID()
-    let time: String
-    let endTime: String
-    let name: String
-    let deadline: String
-    let steps: [String]
-}
-
-// MARK: - EatOutEvent
-
-struct RecommendedDish: Identifiable {
-    let id = UUID()
-    let name: String
-    let desc: String
-}
-
-struct EatOutEvent: Identifiable {
-    let id = UUID()
-    let time: String
-    let guest: String
-    let restaurant: String
-    let cuisine: String
-    let address: String
-    let recommendedDishes: [RecommendedDish]
-}
-
-// MARK: - CookEvent
-
-struct CookDish: Identifiable {
-    let id = UUID()
-    let name: String
-    let steps: [String]
-}
-
-struct Ingredient: Identifiable {
-    let id = UUID()
-    let name: String
-    let amount: String
-}
-
-struct CookEvent: Identifiable {
-    let id = UUID()
-    let time: String
-    let dishes: [CookDish]
-    let cookTime: String
-    let ingredients: [Ingredient]
-}
-
-// MARK: - DeliveryEvent
-
-struct DeliveryItem: Identifiable {
-    let id = UUID()
-    let name: String
-    let price: String
-}
-
-struct DeliveryEvent: Identifiable {
-    let id = UUID()
-    let time: String
-    let shop: String
-    let deliveryTime: String
-    let items: [DeliveryItem]
-    let totalPrice: String
-}
-
 // MARK: - Color hex init
+//
+// The old flat `CurrentEventData` enum (and its LocationEvent/TodoEvent/
+// EatOutEvent/CookEvent/DeliveryEvent/RecommendedDish/DeliveryItem/… structs)
+// previously lived in this file. They have been replaced by the 2-tier
+// `Activity` enum defined in `Activity.swift`. The `Color(hex:)` helper is
+// retained here because many views depend on it.
 
 extension Color {
     init(hex: String) {

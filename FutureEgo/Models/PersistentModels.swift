@@ -9,7 +9,7 @@ class PersistedScheduleStatus {
     @Attribute(.unique) var title: String
     /// Status string: done / active / upcoming
     var statusRaw: String
-    /// Completed step indices for TodoEvent
+    /// Completed step indices for an Activity's step list (e.g. ConcentratingDetail.steps or CookDish.steps)
     var completedStepIndices: [Int]
     /// Last updated timestamp
     var updatedAt: Date

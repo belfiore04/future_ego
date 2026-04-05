@@ -24,9 +24,15 @@ struct CurrentTabView: View {
     private let grayText = Color(hex: "8E8E93")
 
     /// Current event derived from the schedule (nil when schedule is empty).
-    private var currentEvent: CurrentEventData? {
+    private var currentEvent: Activity? {
         guard !schedule.isEmpty, currentIndex < schedule.count else { return nil }
         return schedule[currentIndex].detail
+    }
+
+    /// Current event status, for the card's three-state visual treatment.
+    private var currentStatus: EventStatus {
+        guard !schedule.isEmpty, currentIndex < schedule.count else { return .active }
+        return schedule[currentIndex].status
     }
 
     /// Event progress (fraction of completed items before the current one).
@@ -50,7 +56,7 @@ struct CurrentTabView: View {
 
                 // ── Event content ──
                 if let currentEvent {
-                    CurrentEventView(event: currentEvent)
+                    CurrentEventView(event: currentEvent, status: currentStatus)
                 } else {
                     emptySchedulePlaceholder
                 }

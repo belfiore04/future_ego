@@ -205,29 +205,60 @@ private struct StatusBadge: View {
 }
 
 // MARK: - SubInfo
+//
+// NOTE: Task #1 ported this to the new `Activity` enum. The per-case
+// formatting is intentionally minimal — Task #4 (detail views) and Task #5
+// (timeline polish) will refine the look.
 
 private struct SubInfo: View {
-    let detail: CurrentEventData
+    let detail: Activity
 
     var body: some View {
         switch detail {
-        case .location(let loc):
+        case .outing(let out):
             HStack(spacing: 4) {
                 Text("◎")
-                Text(loc.address)
+                Text(out.destination)
             }
             .font(.system(size: 14))
             .foregroundColor(Color(hex: "8E8E93"))
             .padding(.top, 6)
 
+        case .eating(let eating):
+            eatingSubInfo(eating)
+
+        case .concentrating(let conc):
+            HStack(spacing: 6) {
+                Text("⏰")
+                    .foregroundColor(Color(hex: "FF9500"))
+                Text(conc.taskName)
+                    .foregroundColor(Color(hex: "8E8E93"))
+            }
+            .font(.system(size: 14))
+            .padding(.top, 6)
+
+        case .exercising(let ex):
+            HStack(spacing: 4) {
+                Text("🏃")
+                Text("\(ex.exerciseType) · \(ex.venueName)")
+            }
+            .font(.system(size: 14))
+            .foregroundColor(Color(hex: "8E8E93"))
+            .padding(.top, 6)
+        }
+    }
+
+    @ViewBuilder
+    private func eatingSubInfo(_ eating: EatingDetail) -> some View {
+        switch eating {
         case .delivery(let del):
-            Text("\(del.shop)（\(del.totalPrice)）")
+            Text("\(del.shopName)（¥\(del.estimatedTotalPrice.description)）")
                 .font(.system(size: 14).italic())
                 .foregroundColor(Color(hex: "8E8E93"))
                 .padding(.top, 6)
 
         case .eatOut(let eo):
-            Text("\(eo.restaurant) · \(eo.cuisine)")
+            Text("\(eo.restaurantName) · \(eo.restaurantType)")
                 .font(.system(size: 14))
                 .foregroundColor(Color(hex: "8E8E93"))
                 .padding(.top, 6)
@@ -251,16 +282,6 @@ private struct SubInfo: View {
                 }
             }
             .padding(.top, 8)
-
-        case .todo(let td):
-            HStack(spacing: 6) {
-                Text("⏰")
-                    .foregroundColor(Color(hex: "FF9500"))
-                Text(td.deadline)
-                    .foregroundColor(Color(hex: "8E8E93"))
-            }
-            .font(.system(size: 14))
-            .padding(.top, 6)
         }
     }
 }
@@ -305,9 +326,11 @@ private struct EventDetailSheet: View {
 
             Divider()
 
-            // Sheet content — inline event detail
+            // Sheet content — the Activity card itself, rendered via the
+            // shared `ActivityCardView` dispatcher. This is the single place
+            // (alongside `CurrentEventView`) where the 6 cards are wired up.
             ScrollView(.vertical, showsIndicators: false) {
-                InlineEventDetail(detail: item.detail)
+                ActivityCardView(activity: item.detail, status: item.status)
                     .padding(.horizontal, 24)
                     .padding(.top, 16)
                     .padding(.bottom, 40)
@@ -315,248 +338,6 @@ private struct EventDetailSheet: View {
         }
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.hidden)
-    }
-}
-
-// MARK: - InlineEventDetail
-
-/// Inline event detail view for the sheet.
-/// This provides a self-contained detail rendering so DailyPlanTabView
-/// does not depend on CurrentEventView (which may be created by another task).
-private struct InlineEventDetail: View {
-    let detail: CurrentEventData
-
-    var body: some View {
-        switch detail {
-        case .location(let loc):
-            locationDetail(loc)
-        case .delivery(let del):
-            deliveryDetail(del)
-        case .eatOut(let eo):
-            eatOutDetail(eo)
-        case .cook(let ck):
-            cookDetail(ck)
-        case .todo(let td):
-            todoDetail(td)
-        }
-    }
-
-    // MARK: Location
-    @ViewBuilder
-    private func locationDetail(_ loc: LocationEvent) -> some View {
-        VStack(alignment: .leading, spacing: 16) {
-            detailRow(icon: "mappin.circle.fill", iconColor: Color(hex: "FF3B30"), label: "地点", value: loc.address)
-            detailRow(icon: "clock.fill", iconColor: Color(hex: "007AFF"), label: "时间", value: "\(loc.time) - \(loc.endTime ?? "")")
-
-            if !loc.items.isEmpty {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text(loc.cardTitle)
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundColor(.black)
-                    ForEach(Array(loc.items.enumerated()), id: \.offset) { _, item in
-                        HStack(spacing: 8) {
-                            Circle()
-                                .fill(Color(hex: "34C759"))
-                                .frame(width: 6, height: 6)
-                            Text(item)
-                                .font(.system(size: 15))
-                                .foregroundColor(Color(hex: "3A3A3C"))
-                        }
-                    }
-                }
-                .padding(16)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(RoundedRectangle(cornerRadius: 14).fill(Color.black.opacity(0.03)))
-            }
-        }
-    }
-
-    // MARK: Delivery
-    @ViewBuilder
-    private func deliveryDetail(_ del: DeliveryEvent) -> some View {
-        VStack(alignment: .leading, spacing: 16) {
-            detailRow(icon: "bag.fill", iconColor: Color(hex: "FF9500"), label: "店铺", value: del.shop)
-            detailRow(icon: "bicycle", iconColor: Color(hex: "007AFF"), label: "预计送达", value: del.deliveryTime)
-
-            VStack(alignment: .leading, spacing: 10) {
-                Text("订单详情")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundColor(.black)
-
-                ForEach(del.items) { item in
-                    HStack {
-                        Text(item.name)
-                            .font(.system(size: 15))
-                            .foregroundColor(Color(hex: "3A3A3C"))
-                        Spacer()
-                        Text(item.price)
-                            .font(.system(size: 15, weight: .medium))
-                            .foregroundColor(Color(hex: "8E8E93"))
-                    }
-                }
-
-                Divider()
-
-                HStack {
-                    Text("合计")
-                        .font(.system(size: 15, weight: .semibold))
-                    Spacer()
-                    Text(del.totalPrice)
-                        .font(.system(size: 17, weight: .bold))
-                        .foregroundColor(Color(hex: "FF9500"))
-                }
-            }
-            .padding(16)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(RoundedRectangle(cornerRadius: 14).fill(Color.black.opacity(0.03)))
-        }
-    }
-
-    // MARK: Eat Out
-    @ViewBuilder
-    private func eatOutDetail(_ eo: EatOutEvent) -> some View {
-        VStack(alignment: .leading, spacing: 16) {
-            detailRow(icon: "fork.knife", iconColor: Color(hex: "FF9500"), label: "餐厅", value: "\(eo.restaurant) · \(eo.cuisine)")
-            detailRow(icon: "person.2.fill", iconColor: Color(hex: "5856D6"), label: "同行", value: eo.guest)
-            detailRow(icon: "mappin.circle.fill", iconColor: Color(hex: "FF3B30"), label: "地址", value: eo.address)
-
-            if !eo.recommendedDishes.isEmpty {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("推荐菜品")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundColor(.black)
-
-                    ForEach(eo.recommendedDishes) { dish in
-                        HStack(alignment: .top, spacing: 8) {
-                            Text("•")
-                                .foregroundColor(Color(hex: "FF9500"))
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(dish.name)
-                                    .font(.system(size: 15, weight: .medium))
-                                    .foregroundColor(Color(hex: "3A3A3C"))
-                                Text(dish.desc)
-                                    .font(.system(size: 13))
-                                    .foregroundColor(Color(hex: "8E8E93"))
-                            }
-                        }
-                    }
-                }
-                .padding(16)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(RoundedRectangle(cornerRadius: 14).fill(Color.black.opacity(0.03)))
-            }
-        }
-    }
-
-    // MARK: Cook
-    @ViewBuilder
-    private func cookDetail(_ ck: CookEvent) -> some View {
-        VStack(alignment: .leading, spacing: 16) {
-            detailRow(icon: "flame.fill", iconColor: Color(hex: "FF9500"), label: "烹饪时间", value: ck.cookTime)
-
-            // Dishes
-            ForEach(ck.dishes) { dish in
-                VStack(alignment: .leading, spacing: 10) {
-                    Text(dish.name)
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundColor(.black)
-
-                    ForEach(Array(dish.steps.enumerated()), id: \.offset) { stepIndex, step in
-                        HStack(alignment: .top, spacing: 10) {
-                            Text("\(stepIndex + 1)")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundColor(.white)
-                                .frame(width: 20, height: 20)
-                                .background(Circle().fill(Color(hex: "34C759")))
-
-                            Text(step)
-                                .font(.system(size: 14))
-                                .foregroundColor(Color(hex: "3A3A3C"))
-                        }
-                    }
-                }
-                .padding(16)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(RoundedRectangle(cornerRadius: 14).fill(Color.black.opacity(0.03)))
-            }
-
-            // Ingredients
-            if !ck.ingredients.isEmpty {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("食材清单")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundColor(.black)
-
-                    ForEach(ck.ingredients) { ing in
-                        HStack {
-                            Text(ing.name)
-                                .font(.system(size: 15))
-                                .foregroundColor(Color(hex: "3A3A3C"))
-                            Spacer()
-                            Text(ing.amount)
-                                .font(.system(size: 14))
-                                .foregroundColor(Color(hex: "8E8E93"))
-                        }
-                    }
-                }
-                .padding(16)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(RoundedRectangle(cornerRadius: 14).fill(Color.black.opacity(0.03)))
-            }
-        }
-    }
-
-    // MARK: Todo
-    @ViewBuilder
-    private func todoDetail(_ td: TodoEvent) -> some View {
-        VStack(alignment: .leading, spacing: 16) {
-            detailRow(icon: "clock.fill", iconColor: Color(hex: "007AFF"), label: "时间", value: "\(td.time) - \(td.endTime)")
-            detailRow(icon: "alarm.fill", iconColor: Color(hex: "FF9500"), label: "截止", value: td.deadline)
-
-            if !td.steps.isEmpty {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("步骤")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundColor(.black)
-
-                    ForEach(Array(td.steps.enumerated()), id: \.offset) { stepIndex, step in
-                        HStack(alignment: .top, spacing: 10) {
-                            Text("\(stepIndex + 1)")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundColor(.white)
-                                .frame(width: 20, height: 20)
-                                .background(Circle().fill(Color(hex: "5856D6")))
-
-                            Text(step)
-                                .font(.system(size: 14))
-                                .foregroundColor(Color(hex: "3A3A3C"))
-                        }
-                    }
-                }
-                .padding(16)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(RoundedRectangle(cornerRadius: 14).fill(Color.black.opacity(0.03)))
-            }
-        }
-    }
-
-    // MARK: Detail Row Helper
-    private func detailRow(icon: String, iconColor: Color, label: String, value: String) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon)
-                .font(.system(size: 16))
-                .foregroundColor(iconColor)
-                .frame(width: 24)
-
-            VStack(alignment: .leading, spacing: 1) {
-                Text(label)
-                    .font(.system(size: 12))
-                    .foregroundColor(Color(hex: "8E8E93"))
-                Text(value)
-                    .font(.system(size: 15))
-                    .foregroundColor(Color(hex: "3A3A3C"))
-            }
-        }
     }
 }
 

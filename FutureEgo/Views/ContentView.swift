@@ -38,8 +38,22 @@ struct ContentView: View {
     /// Shared schedule state, mutated by AI function calls.
     @StateObject private var scheduleManager = ScheduleManager.shared
 
+    /// Global dynamic tint driven by the currently focused activity.
+    @StateObject private var themeManager = ThemeManager.shared
+
     init() {
         LaunchTrace.mark("ContentView.init")
+    }
+
+    /// Resolve the `Activity` that should currently drive the tint.
+    /// Returns `nil` when the schedule is empty or the index is out of bounds,
+    /// letting `ThemeManager` fall back to the brand-green default.
+    private var activeActivity: Activity? {
+        let items = scheduleManager.schedule
+        guard !items.isEmpty else { return nil }
+        let idx = scheduleManager.currentIndex
+        guard items.indices.contains(idx) else { return nil }
+        return items[idx].detail
     }
 
     var body: some View {
@@ -75,7 +89,22 @@ struct ContentView: View {
                 }
                 .tag(TabId.profile)
         }
-        .tint(Color(hex: "34C759"))
+        .tint(themeManager.tint)
+        .onAppear {
+            themeManager.update(for: activeActivity)
+        }
+        // Per spec: react to `currentIndex` moves and to schedule mutations.
+        // We observe `schedule.map(\.detail)` rather than `schedule` directly
+        // because `ScheduleItem` is not `Equatable` (and modifying that model
+        // is out of scope for this task); `Activity` is already `Hashable`,
+        // so the projected array satisfies `onChange(of:)`'s requirements
+        // while still firing on any detail-level change.
+        .onChange(of: scheduleManager.currentIndex) { _, _ in
+            themeManager.update(for: activeActivity)
+        }
+        .onChange(of: scheduleManager.schedule.map(\.detail)) { _, _ in
+            themeManager.update(for: activeActivity)
+        }
         .fullScreenCover(isPresented: $callService.isCallActive) {
             CallingOverlay {
                 callService.endCall()

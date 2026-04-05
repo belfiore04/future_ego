@@ -137,6 +137,11 @@ struct OutingDetail: Codable, Hashable, Identifiable {
     var transitDurationMinutes: Int?
     var drivingDurationMinutes: Int?
     var latestDepartureTime: Date?
+    /// Optional inspirational quote shown on the detail page. Populated later
+    /// by AI post-processing or curated content — never by the AI tool call
+    /// that creates the schedule. Defaults to `nil`; existing call sites are
+    /// unaffected because the explicit init below does not require it.
+    var inspirationQuote: String? = nil
 
     init(
         id: UUID = UUID(),
@@ -185,6 +190,9 @@ struct DeliveryDetail: Codable, Hashable, Identifiable {
     var orderItems: [OrderItem]
     var estimatedTotalPrice: Decimal
     var isAIInferred: Bool
+    /// Optional inspirational quote shown on the detail page. See
+    /// `OutingDetail.inspirationQuote` for rationale.
+    var inspirationQuote: String? = nil
 
     init(
         id: UUID = UUID(),
@@ -237,6 +245,9 @@ struct CookDetail: Codable, Hashable, Identifiable {
     var dishes: [CookDish]
     var cookDurationMinutes: Int
     var ingredients: [Ingredient]
+    /// Optional inspirational quote shown on the detail page. See
+    /// `OutingDetail.inspirationQuote` for rationale.
+    var inspirationQuote: String? = nil
 
     init(
         id: UUID = UUID(),
@@ -264,6 +275,9 @@ struct EatOutDetail: Codable, Hashable, Identifiable {
     var restaurantCoordinate: GeoPoint?
     var restaurantAddress: String
     var recommendedDishes: [String]
+    /// Optional inspirational quote shown on the detail page. See
+    /// `OutingDetail.inspirationQuote` for rationale.
+    var inspirationQuote: String? = nil
 
     init(
         id: UUID = UUID(),
@@ -296,6 +310,9 @@ struct ConcentratingDetail: Codable, Hashable, Identifiable {
     var deadline: Date?
     var steps: [String]
     var isAISuggested: Bool
+    /// Optional inspirational quote shown on the detail page. See
+    /// `OutingDetail.inspirationQuote` for rationale.
+    var inspirationQuote: String? = nil
 
     init(
         id: UUID = UUID(),
@@ -327,6 +344,9 @@ struct ExercisingDetail: Codable, Hashable, Identifiable {
     var venueAddress: String
     var userEquipment: [String]
     var aiSuggestedEquipment: [String]
+    /// Optional inspirational quote shown on the detail page. See
+    /// `OutingDetail.inspirationQuote` for rationale.
+    var inspirationQuote: String? = nil
 
     init(
         id: UUID = UUID(),
@@ -346,5 +366,27 @@ struct ExercisingDetail: Codable, Hashable, Identifiable {
         self.venueAddress = venueAddress
         self.userEquipment = userEquipment
         self.aiSuggestedEquipment = aiSuggestedEquipment
+    }
+}
+
+// MARK: - ConcentratingDetail elapsed helpers
+
+extension ConcentratingDetail {
+    /// Seconds elapsed from `startTime` to `now`. Only meaningful for
+    /// in-progress events. A negative return value indicates the event has
+    /// not started yet — callers decide whether to show it.
+    func elapsedSeconds(at now: Date = Date()) -> TimeInterval {
+        now.timeIntervalSince(startTime)
+    }
+
+    /// Formats the elapsed time as `"H:MM:SS"` (e.g. `"1:23:21"`), for UI.
+    /// Negative elapsed values clamp to zero so the UI never displays a
+    /// negative timer.
+    func elapsedFormatted(at now: Date = Date()) -> String {
+        let total = max(0, Int(elapsedSeconds(at: now)))
+        let h = total / 3600
+        let m = (total % 3600) / 60
+        let s = total % 60
+        return String(format: "%d:%02d:%02d", h, m, s)
     }
 }

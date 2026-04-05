@@ -2,33 +2,41 @@ import SwiftUI
 
 // MARK: - ActivityDetailPageRouter
 //
-// Dispatches the currently focused `Activity` to the matching redesigned
-// detail page (Wave 2 / Wave 3 output). This replaces the old
-// `CurrentEventView` switchboard and is the single entry point used by
-// `CurrentTabView` to render the body of the "此刻" tab.
+// Dispatches the currently focused `Activity` to the matching
+// redesigned detail page. During Wave 0 every branch returns a simple
+// `Text` placeholder so the project compiles while the real pages are
+// still being written in Wave 2. The switch is intentionally
+// exhaustive — no `default:` branch — so the compiler flags any future
+// additions to `Activity` / `EatingDetail`.
 //
-// The switch is intentionally exhaustive with no `default:` branch so the
-// compiler flags any future additions to `Activity` / `EatingDetail`.
-//
-// Spec: `/home/jun/.pm/2026-04-06/task-10/spec.md`.
+// Spec: `/home/jun/future_ego/.pm/2026-04-06/task-1/spec.md`.
 
 struct ActivityDetailPageRouter: View {
     let activity: Activity
 
     var body: some View {
         switch activity {
-        case .outing(let d):
-            OutingDetailPage(detail: d)
-        case .exercising(let d):
-            ExercisingDetailPage(detail: d)
-        case .eating(.delivery(let d)):
-            DeliveryDetailPage(detail: d)
-        case .eating(.cook(let d)):
-            CookDetailPage(detail: d)
-        case .eating(.eatOut(let d)):
-            EatOutDetailPage(detail: d)
-        case .concentrating(let d):
-            ConcentratingDetailPage(detail: d)
+        case .outing:
+            stub("outing")
+        case .exercising:
+            stub("exercising")
+        case .eating(.delivery):
+            stub("eating-delivery")
+        case .eating(.cook):
+            stub("eating-cook")
+        case .eating(.eatOut):
+            stub("eating-eatOut")
+        case .concentrating:
+            stub("concentrating")
         }
+    }
+
+    @ViewBuilder
+    private func stub(_ name: String) -> some View {
+        Text("TODO: \(name)")
+            .font(.system(size: 18, weight: .semibold))
+            .foregroundStyle(Color.white)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color.gray)
     }
 }

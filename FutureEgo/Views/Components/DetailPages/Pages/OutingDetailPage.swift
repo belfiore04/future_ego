@@ -40,7 +40,7 @@ struct OutingDetailPage: View {
     }
 
     private var activityName: String {
-        "\(detail.activityName) · \(detail.destination)"
+        detail.activityName
     }
 
     private var motivationalText: String {

@@ -85,7 +85,7 @@ struct LocationMapSheet: View {
             if let coordinate {
                 Map(position: $cameraPosition) {
                     Marker(title, coordinate: coordinate.coordinate)
-                        .tint(Color(hex: "34C759"))
+                        .tint(Color.brandGreen)
                 }
                 .mapStyle(.standard(elevation: .flat))
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -104,7 +104,7 @@ struct LocationMapSheet: View {
             Spacer()
             Image(systemName: "mappin.and.ellipse")
                 .font(.system(size: 44))
-                .foregroundColor(Color(hex: "34C759").opacity(0.5))
+                .foregroundColor(Color.brandGreen.opacity(0.5))
             Text(address.isEmpty ? "暂无地址信息" : address)
                 .font(.system(size: 15))
                 .foregroundColor(darkText)

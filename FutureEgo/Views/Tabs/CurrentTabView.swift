@@ -2,16 +2,22 @@ import SwiftUI
 
 // MARK: - CurrentTabView
 
-/// The "此刻" (Now) tab — shows the current event detail with a header,
-/// scrollable event content, and a native bottom toolbar.
+/// The "此刻" (Now) tab — renders the currently focused activity via the
+/// Wave 2/3 redesigned detail pages (dispatched through
+/// `ActivityDetailPageRouter`) or an empty-state placeholder when the
+/// schedule is empty. The legacy header (date + weather + DualProgressRing)
+/// was removed in Wave 4 (task-10) now that each detail page renders its
+/// own header.
+///
+/// Floating camera + phone buttons, sticker overlay, background
+/// segmentation, and the phone-button pulse coach-mark all remain here
+/// because they belong to the tab chrome rather than to any individual
+/// activity page.
 struct CurrentTabView: View {
     let schedule: [ScheduleItem]
     let currentIndex: Int
     /// Called when the user taps the "AI Coach" toolbar button.
     var onStartCalling: (() -> Void)? = nil
-
-    // MARK: - Weather
-    @StateObject private var weather = WeatherService.shared
 
     // MARK: - Camera & stickers state
     @State private var showCamera = false
@@ -22,47 +28,19 @@ struct CurrentTabView: View {
     // Pulsing coach-mark around phone button on first empty state.
     @State private var hintPulse = false
 
-    // MARK: - Design tokens
-    private let accentGreen = Color(hex: "34C759")
-    private let grayText = Color(hex: "8E8E93")
-
-    /// Current event derived from the schedule (nil when schedule is empty).
-    private var currentEvent: Activity? {
+    /// Current activity derived from the schedule (nil when empty / out of
+    /// bounds). Drives the router dispatch below.
+    private var currentActivity: Activity? {
         guard !schedule.isEmpty, currentIndex < schedule.count else { return nil }
         return schedule[currentIndex].detail
     }
 
-    /// Current event status, for the card's three-state visual treatment.
-    private var currentStatus: EventStatus {
-        guard !schedule.isEmpty, currentIndex < schedule.count else { return .active }
-        return schedule[currentIndex].status
-    }
-
-    /// Event progress (fraction of completed items before the current one).
-    private var eventProgress: Double {
-        guard schedule.count > 1 else { return 0 }
-        return Double(currentIndex) / Double(schedule.count - 1)
-    }
-
-    /// Day progress: simple fraction based on the current hour (8am–23pm range).
-    private var dayProgress: Double {
-        let hour = Calendar.current.component(.hour, from: Date())
-        let clamped = min(max(Double(hour) - 8.0, 0), 15.0)
-        return clamped / 15.0
-    }
-
     var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 0) {
-                // ── Header ──
-                headerView
-
-                // ── Event content ──
-                if let currentEvent {
-                    CurrentEventView(event: currentEvent, status: currentStatus)
-                } else {
-                    emptySchedulePlaceholder
-                }
+        Group {
+            if let activity = currentActivity {
+                ActivityDetailPageRouter(activity: activity)
+            } else {
+                emptySchedulePlaceholder
             }
         }
         .overlay {
@@ -89,7 +67,6 @@ struct CurrentTabView: View {
         }
         .onAppear {
             LaunchTrace.mark("CurrentTabView .onAppear (first frame visible)")
-            weather.requestLocation()
             loadPersistedStickers()
             hintPulse = true
             LaunchTrace.mark("CurrentTabView .onAppear end")
@@ -102,13 +79,13 @@ struct CurrentTabView: View {
         VStack(spacing: 16) {
             Image(systemName: "calendar.badge.plus")
                 .font(.system(size: 44))
-                .foregroundStyle(accentGreen.opacity(0.5))
+                .foregroundStyle(Color.brandGreen.opacity(0.5))
             Text("还没有日程")
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundColor(.primary)
             Text("点右下角的电话键\n跟 AI Coach 说说今天打算做什么")
                 .font(.system(size: 14))
-                .foregroundColor(grayText)
+                .foregroundColor(Color(hex: "8E8E93"))
                 .multilineTextAlignment(.center)
                 .lineSpacing(4)
         }
@@ -131,7 +108,7 @@ struct CurrentTabView: View {
                 // items yet, to draw the user to the primary first action.
                 if schedule.isEmpty {
                     Circle()
-                        .stroke(accentGreen.opacity(0.6), lineWidth: 2)
+                        .stroke(Color.brandGreen.opacity(0.6), lineWidth: 2)
                         .scaleEffect(hintPulse ? 1.6 : 1.0)
                         .opacity(hintPulse ? 0.0 : 0.9)
                         .animation(
@@ -197,53 +174,6 @@ struct CurrentTabView: View {
             guard let img = PersistenceService.shared.loadStickerImage(p) else { return nil }
             return StickerItem(image: img)
         }
-    }
-
-    // MARK: - Header
-
-    private var headerView: some View {
-        HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(formattedDate)
-                    .font(.system(size: 34, weight: .bold))
-                    .foregroundColor(.black)
-                    .tracking(0.4)
-
-                Text(formattedSubtitle)
-                    .font(.system(size: 20, weight: .bold))
-                    .foregroundColor(.black)
-            }
-
-            Spacer()
-
-            ProgressRing(
-                eventProgress: eventProgress,
-                dayProgress: dayProgress
-            )
-        }
-        .padding(.horizontal, 24)
-        .padding(.top, 24)
-        .padding(.bottom, 16)
-    }
-
-    // MARK: - Date helpers
-
-    private var formattedDate: String {
-        let now = Date()
-        let cal = Calendar.current
-        let y = cal.component(.year, from: now)
-        let m = cal.component(.month, from: now)
-        let d = cal.component(.day, from: now)
-        return "\(y)/\(m)/\(d)"
-    }
-
-    private var formattedSubtitle: String {
-        let now = Date()
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "zh_CN")
-        formatter.dateFormat = "EEEE"
-        let weekday = formatter.string(from: now)
-        return "\(weekday) \u{00B7} \(weather.cityName) \u{00B7} \(weather.weatherDescription)"
     }
 }
 

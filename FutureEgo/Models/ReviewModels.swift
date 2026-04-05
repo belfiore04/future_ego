@@ -169,7 +169,7 @@ enum ReviewSampleData {
             id: .exercise,
             icon: "🏃",
             label: "运动",
-            color: Color(hex: "34C759"),
+            color: Color.brandGreen,
             summary: "活动 4 天",
             description: "315 分钟 · 消耗 1,280kcal"
         ),
@@ -250,7 +250,7 @@ enum ReviewSampleData {
 
     private static let monthExercise = ExerciseDetail(
         chartData: [
-            ExerciseChartEntry(name: "跑步", value: 360, color: Color(hex: "34C759")),
+            ExerciseChartEntry(name: "跑步", value: 360, color: Color.brandGreen),
             ExerciseChartEntry(name: "瑜伽", value: 240, color: Color(hex: "5856D6")),
             ExerciseChartEntry(name: "力量", value: 180, color: Color(hex: "FF9500")),
             ExerciseChartEntry(name: "步行", value: 480, color: Color(hex: "007AFF")),
@@ -357,7 +357,7 @@ enum ReviewSampleData {
 
     private static let weekExercise = ExerciseDetail(
         chartData: [
-            ExerciseChartEntry(name: "跑步", value: 90, color: Color(hex: "34C759")),
+            ExerciseChartEntry(name: "跑步", value: 90, color: Color.brandGreen),
             ExerciseChartEntry(name: "瑜伽", value: 60, color: Color(hex: "5856D6")),
             ExerciseChartEntry(name: "力量", value: 45, color: Color(hex: "FF9500")),
             ExerciseChartEntry(name: "步行", value: 120, color: Color(hex: "007AFF")),
@@ -452,7 +452,7 @@ enum ReviewSampleData {
 
     private static let dayExercise = ExerciseDetail(
         chartData: [
-            ExerciseChartEntry(name: "跑步", value: 30, color: Color(hex: "34C759")),
+            ExerciseChartEntry(name: "跑步", value: 30, color: Color.brandGreen),
             ExerciseChartEntry(name: "步行", value: 45, color: Color(hex: "007AFF")),
         ],
         totalMinutes: 75,

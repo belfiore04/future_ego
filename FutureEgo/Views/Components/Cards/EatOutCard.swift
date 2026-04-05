@@ -18,7 +18,7 @@ struct EatOutCard: View {
     private let grayText = Color(hex: "8E8E93")
     private let darkText = Color(hex: "3A3A3C")
     private let eatingColor = Color(hex: "FF9500")
-    private let accentGreen = Color(hex: "34C759")
+    private let accentGreen = Color.brandGreen
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {

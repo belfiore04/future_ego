@@ -19,7 +19,7 @@ struct SwipeableCard<Content: View>: View {
     @State private var currentPage: Int = 0
 
     // MARK: - Design tokens
-    private let accentGreen = Color(hex: "34C759")
+    private let accentGreen = Color.brandGreen
     private let dotInactive = Color.black.opacity(0.12)
     private let activeDotWidth: CGFloat = 20
     private let inactiveDotWidth: CGFloat = 6

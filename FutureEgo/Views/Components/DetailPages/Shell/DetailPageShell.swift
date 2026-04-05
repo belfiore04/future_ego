@@ -12,10 +12,10 @@ import SwiftUI
 // between the Hero card and the content card is a load-bearing detail:
 //   1. Gray back fill (#F2F2F7)
 //   2. Outer white card (390 × 844, rounded 40, twin drop shadows)
-//   3. Hero card (340 × 239 @ (25, 94), rounded 29, palette primary)
+//   3. Hero card (340 × 239 @ (25, 0), rounded 29, palette primary)
 //   4. Hero illustration + motivational copy inside Hero card
-//   5. Content card (340 × 459 @ (25, 270), rounded 29, 1px palette
-//      stroke) — overlaps the Hero card by 63pt
+//   5. Content card (340 × 459 @ (25, 176), rounded 29, 1px palette
+//      stroke) — overlaps the Hero card by 63pt (0 + 239 - 176 = 63)
 //   6. Giant time / activity name / location line — positioned over the
 //      content card but straddling the Hero↔content boundary
 //   7. Floating action pills (camera | AI coach)
@@ -74,11 +74,11 @@ struct DetailPageShell<ContentCardBody: View>: View {
                 .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 8)
                 .shadow(color: Color.black.opacity(0.1), radius: 12.5, x: 0, y: 20)
 
-            // 3. Hero card @ (25, 94) 340 × 239
+            // 3. Hero card @ (25, 0) 340 × 239
             RoundedRectangle(cornerRadius: 29, style: .continuous)
                 .fill(palette.primary)
                 .frame(width: 340, height: 239)
-                .offset(x: 25, y: 94)
+                .offset(x: 25, y: 0)
 
             // 4a. Motivational copy @ (43, 138) 140 × 84 inside Hero
             Text(motivationalText)
@@ -88,12 +88,12 @@ struct DetailPageShell<ContentCardBody: View>: View {
                 .frame(width: 140, height: 84, alignment: .topLeading)
                 .offset(x: 43, y: 138)
 
-            // 4b. Hero illustration @ (220, 110) = Hero(25,94) + (195, 16)
+            // 4b. Hero illustration @ (220, 110) = Hero(25,0) + (195, 110)
             HeroIllustration(symbolName: heroSymbolName, palette: palette)
                 .offset(x: 220, y: 110)
 
-            // 5. Content card @ (25, 270) 340 × 459 — overlaps Hero by
-            // 63pt (94 + 239 - 270 = 63) per ground-truth.
+            // 5. Content card @ (25, 176) 340 × 459 — overlaps Hero by
+            // 63pt (0 + 239 - 176 = 63) per ground-truth §2.
             RoundedRectangle(cornerRadius: 29, style: .continuous)
                 .fill(Color.white)
                 .frame(width: 340, height: 459)
@@ -101,20 +101,37 @@ struct DetailPageShell<ContentCardBody: View>: View {
                     RoundedRectangle(cornerRadius: 29, style: .continuous)
                         .stroke(palette.primary, lineWidth: 1)
                 )
-                .offset(x: 25, y: 270)
+                .offset(x: 25, y: 176)
 
             // 5b. Content slot — each page paints whatever it wants
             // inside the 340 × 459 content card. A top inset leaves
             // space for the giant-time / activity-name / location-line
-            // stack rendered in step 6 (315 → 451 ≈ 136pt header area).
+            // header stack rendered in step 6. Derivation (content-card-
+            // local coords = shell absolute y - 176):
+            //   - Huge time     shell y=315 → card-local top = 139
+            //   - Activity name shell y=403 → card-local top = 227
+            //   - Location line shell y=451 → card-local top = 275
+            //   - Location line height @ 15pt system ≈ 15 × 1.2 ≈ 18
+            //   - Location line bottom (last header) = 275 + 18 = 293
+            //   - Safety margin                                 +  8
+            //   - Inset                                         = 301
+            // Note: Figma places the content-block title at card-local
+            // y≈246 (LocationView @ (25,406) local + title @ (24,16) =
+            // absolute y≈422 → local y≈246), which collides with the
+            // location-line header at local y=275. Figma does absolute
+            // positioning per element and accepts that collision; our
+            // iOS implementation uses a flow layout and pushes the
+            // content body below the header zone. Usable content area
+            // = 459 - 301 = 158pt.
             contentCardBody()
+                .padding(.top, 301)
                 .frame(width: 340, height: 459, alignment: .topLeading)
                 .clipShape(RoundedRectangle(cornerRadius: 29, style: .continuous))
-                .offset(x: 25, y: 270)
+                .offset(x: 25, y: 176)
 
             // 6a. Giant time @ (41, 315). Positioned on top of the
             // content card so it visually straddles the Hero↔content
-            // boundary (the baseline sits below y=270). The maxWidth
+            // boundary (the baseline sits below y=176). The maxWidth
             // frame (340 content card - 2×16 padding = 308) gives
             // HugeTimeDisplay's minimumScaleFactor an anchor to shrink
             // against for long timers like "1:23:21".

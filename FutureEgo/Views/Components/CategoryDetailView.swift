@@ -11,7 +11,7 @@ struct CategoryDetailView: View {
 
     // MARK: - Design Tokens
 
-    private let backButtonColor = Color(hex: "34C759")
+    private let backButtonColor = Color.brandGreen
     private let subtitleColor = Color(hex: "8E8E93")
     private let bodyTextColor = Color(hex: "3A3A3C")
     private let cardBorder = Color.black.opacity(0.05)

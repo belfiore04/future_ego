@@ -85,11 +85,11 @@ private struct TimelineRow: View {
                     .padding(.vertical, 12)
                     .background(
                         RoundedRectangle(cornerRadius: 16)
-                            .fill(Color(hex: "34C759").opacity(0.06))
+                            .fill(Color.brandGreen.opacity(0.06))
                     )
                     .overlay(
                         RoundedRectangle(cornerRadius: 16)
-                            .stroke(Color(hex: "34C759").opacity(0.15), lineWidth: 1)
+                            .stroke(Color.brandGreen.opacity(0.15), lineWidth: 1)
                     )
                     .padding(.horizontal, -4)
             } else if isUpcoming {
@@ -119,7 +119,7 @@ private struct TimelineRow: View {
                     .fill(dotColor)
                     .frame(width: 10, height: 10)
                     .shadow(
-                        color: isActive ? Color(hex: "34C759").opacity(0.4) : .clear,
+                        color: isActive ? Color.brandGreen.opacity(0.4) : .clear,
                         radius: isActive ? 4 : 0
                     )
 
@@ -163,7 +163,7 @@ private struct TimelineRow: View {
     }
 
     private var dotColor: Color {
-        if isActive { return Color(hex: "34C759") }
+        if isActive { return Color.brandGreen }
         if isDone { return Color(hex: "C7C7CC") }
         return Color(hex: "D1D1D6")
     }
@@ -188,7 +188,7 @@ private struct StatusBadge: View {
         if item.status == .done {
             badgeCapsule(text: "已完成", textColor: Color(hex: "C7C7CC"), bgColor: Color.black.opacity(0.03))
         } else if item.status == .active {
-            badgeCapsule(text: "进行中", textColor: Color(hex: "34C759"), bgColor: Color(hex: "34C759").opacity(0.1))
+            badgeCapsule(text: "进行中", textColor: Color.brandGreen, bgColor: Color.brandGreen.opacity(0.1))
         } else if let tag = item.tag, let tagColor = item.tagColor {
             badgeCapsule(text: tag, textColor: tagColor, bgColor: tagColor.opacity(0.09))
         }

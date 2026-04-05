@@ -149,7 +149,7 @@ private struct MiniChartPreview: View {
                 x: .value("时段", entry.day),
                 y: .value("自炊", entry.home)
             )
-            .foregroundStyle(Color(hex: "34C759"))
+            .foregroundStyle(Color.brandGreen)
             .cornerRadius(3)
 
             BarMark(

@@ -80,7 +80,7 @@ struct DietChartView: View {
     let data: DietDetail
 
     // MARK: - Design tokens
-    private let homeCookColor = Color(hex: "34C759")
+    private let homeCookColor = Color.brandGreen
     private let eatOutColor = Color(hex: "FF9500")
 
     var body: some View {
@@ -463,7 +463,7 @@ struct ExerciseChartView: View {
                 ExerciseChartEntry(name: "跑步", value: 120, color: Color(hex: "FF2D55")),
                 ExerciseChartEntry(name: "游泳", value: 90, color: Color(hex: "007AFF")),
                 ExerciseChartEntry(name: "瑜伽", value: 60, color: Color(hex: "5856D6")),
-                ExerciseChartEntry(name: "骑行", value: 45, color: Color(hex: "34C759")),
+                ExerciseChartEntry(name: "骑行", value: 45, color: Color.brandGreen),
             ],
             totalMinutes: 315,
             activeDays: 5,

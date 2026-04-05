@@ -35,7 +35,7 @@ private struct ActivityCardContainerModifier: ViewModifier {
     private var backgroundFill: Color {
         switch status {
         case .active:
-            return Color(hex: "34C759").opacity(0.06)
+            return Color.brandGreen.opacity(0.06)
         case .done:
             return Color.black.opacity(0.02)
         case .upcoming:
@@ -46,7 +46,7 @@ private struct ActivityCardContainerModifier: ViewModifier {
     private var borderColor: Color {
         switch status {
         case .active:
-            return Color(hex: "34C759").opacity(0.2)
+            return Color.brandGreen.opacity(0.2)
         case .done:
             return Color.black.opacity(0.06)
         case .upcoming:

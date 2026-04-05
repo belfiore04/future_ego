@@ -103,18 +103,18 @@ struct ProfileTabView: View {
                         .scaledToFill()
                         .frame(width: 72, height: 72)
                         .clipShape(Circle())
-                        .shadow(color: Color(hex: "34C759").opacity(0.3), radius: 8, x: 0, y: 4)
+                        .shadow(color: Color.brandGreen.opacity(0.3), radius: 8, x: 0, y: 4)
                 } else {
                     Circle()
                         .fill(
                             LinearGradient(
-                                colors: [Color(hex: "34C759"), Color(hex: "30D158")],
+                                colors: [Color.brandGreen, Color(hex: "30D158")],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )
                         )
                         .frame(width: 72, height: 72)
-                        .shadow(color: Color(hex: "34C759").opacity(0.3), radius: 8, x: 0, y: 4)
+                        .shadow(color: Color.brandGreen.opacity(0.3), radius: 8, x: 0, y: 4)
 
                     Text(String(nickname.prefix(1)))
                         .font(.system(size: 28, weight: .semibold))
@@ -137,12 +137,12 @@ struct ProfileTabView: View {
             // Edit profile hint
             Text("编辑资料")
                 .font(.system(size: 13, weight: .medium))
-                .foregroundColor(Color(hex: "34C759"))
+                .foregroundColor(Color.brandGreen)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 6)
                 .background(
                     Capsule()
-                        .stroke(Color(hex: "34C759"), lineWidth: 1)
+                        .stroke(Color.brandGreen, lineWidth: 1)
                 )
                 .padding(.top, 10)
         }
@@ -169,7 +169,7 @@ struct ProfileTabView: View {
         VStack(spacing: 6) {
             Text(stat.value)
                 .font(.system(size: 24, weight: .bold))
-                .foregroundColor(Color(hex: "34C759"))
+                .foregroundColor(Color.brandGreen)
 
             Text(stat.label)
                 .font(.system(size: 12))

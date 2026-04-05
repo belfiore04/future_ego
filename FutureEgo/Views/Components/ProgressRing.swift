@@ -15,8 +15,8 @@ struct ProgressRing: View {
     private let innerRadius: CGFloat = 26
     private let outerStrokeWidth: CGFloat = 7
     private let innerStrokeWidth: CGFloat = 5
-    private let accentGreen = Color(hex: "34C759")
-    private let accentGreenLight = Color(hex: "34C759").opacity(0.35)
+    private let accentGreen = Color.brandGreen
+    private let accentGreenLight = Color.brandGreen.opacity(0.35)
     private let trackColor = Color.black.opacity(0.06)
 
     var body: some View {

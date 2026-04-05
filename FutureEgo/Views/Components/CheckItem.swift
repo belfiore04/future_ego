@@ -9,7 +9,7 @@ struct CheckItem: View {
 
     // MARK: - Design tokens
     private let circleSize: CGFloat = 22
-    private let accentGreen = Color(hex: "34C759")
+    private let accentGreen = Color.brandGreen
 
     var body: some View {
         Button {

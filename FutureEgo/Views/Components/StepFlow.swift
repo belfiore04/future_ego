@@ -10,7 +10,7 @@ struct StepFlow: View {
     private let circleSize: CGFloat = 24
     private let lineWidth: CGFloat = 1.5
     private let lineHeight: CGFloat = 20
-    private let accentGreen = Color(hex: "34C759")
+    private let accentGreen = Color.brandGreen
 
     var body: some View {
         VStack(spacing: 0) {

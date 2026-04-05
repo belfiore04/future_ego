@@ -60,7 +60,7 @@ enum SampleData {
 
     // MARK: - Color palette (reused per-category for tag chips)
 
-    private static let outingColor = Color(hex: "34C759")        // green
+    private static let outingColor = Color.brandGreen            // green
     private static let eatingColor = Color(hex: "FF9500")        // orange
     private static let concentratingColor = Color(hex: "5856D6") // indigo
     private static let exercisingColor = Color(hex: "FF2D55")    // pink

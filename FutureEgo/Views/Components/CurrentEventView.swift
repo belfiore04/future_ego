@@ -18,7 +18,7 @@ struct CurrentEventView: View {
 
             Text(event.displayTimeRange)
                 .font(.system(size: 44, weight: .medium))
-                .foregroundColor(Color(hex: "34C759"))
+                .foregroundColor(Color.brandGreen)
 
             ActivityCardView(activity: event, status: status)
                 .padding(.top, 4)

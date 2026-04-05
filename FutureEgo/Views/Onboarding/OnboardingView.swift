@@ -20,7 +20,7 @@ struct OnboardingView: View {
 
     // MARK: - Design Tokens
 
-    private let accentGreen = Color(hex: "34C759")
+    private let accentGreen = Color.brandGreen
     private let subtitleGray = Color(hex: "8E8E93")
 
     // MARK: - Body

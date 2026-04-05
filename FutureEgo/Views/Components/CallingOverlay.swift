@@ -36,7 +36,7 @@ struct CallingOverlay: View {
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     // MARK: - Design tokens
-    private let accentGreen = Color(hex: "34C759")
+    private let accentGreen = Color.brandGreen
 
     // MARK: - Body
 

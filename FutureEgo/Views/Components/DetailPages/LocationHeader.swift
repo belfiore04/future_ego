@@ -9,10 +9,10 @@ import SwiftUI
 //
 // Layout:
 //   - `VStack(alignment: .leading)` so multi-line titles stay flush left
-//   - horizontal padding 24, vertical padding 16 (matches the spec; the
-//     enclosing `ActivityPageScaffold` will additionally provide its own
-//     horizontal padding, but callers frequently drop the header outside
-//     the scaffold, so we bake it in here too)
+//   - vertical padding 16 only; horizontal padding is owned by the
+//     enclosing `ActivityPageScaffold` (24pt). Double-padding would
+//     collapse inner content by 48pt, so LocationHeader stays flush to
+//     whatever container it's dropped into.
 //
 // Spec: `/home/jun/.pm/2026-04-06/task-2/spec.md`.
 
@@ -42,7 +42,6 @@ struct LocationHeader: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 24)
         .padding(.vertical, 16)
     }
 }

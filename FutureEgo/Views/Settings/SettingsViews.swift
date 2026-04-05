@@ -46,6 +46,24 @@ struct NotificationSettingsView: View {
             Section(footer: Text("开启后将在相应时间推送通知")) {
                 // Placeholder: future reminder time picker
             }
+
+            Section(header: Text("调试 (Debug)"), footer: Text("Console.app 过滤 subsystem=com.futureego.scheduledcall 看 log。\n• 直接触发：绕过通知，直接调 CallKit，验证真机上 CallKit 本身能不能拉起来电 UI。\n• 60 秒后触发：注册一个 60s 本地通知，验证通知送达与权限。如果 60s 后只弹 banner 不响来电，就是 UNUserNotificationCenterDelegate 没挂（需要在 App 里加 AppDelegate）。")) {
+                Button("立即触发晨间来电（直接调 CallKit）") {
+                    scheduledCall.debugTriggerNow(mode: .morning)
+                }
+                Button("立即触发晚间来电（直接调 CallKit）") {
+                    scheduledCall.debugTriggerNow(mode: .evening)
+                }
+                Button("60 秒后触发通知（走本地通知路径）") {
+                    scheduledCall.debugScheduleNotification(in: 60, mode: .morning)
+                }
+                Button("打印待发通知到日志") {
+                    scheduledCall.debugPrintPendingRequests()
+                }
+                Button("检查通知授权状态") {
+                    scheduledCall.debugCheckAuthorization()
+                }
+            }
         }
         .navigationTitle("通知提醒")
         .navigationBarTitleDisplayMode(.inline)

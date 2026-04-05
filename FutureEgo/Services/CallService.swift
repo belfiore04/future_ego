@@ -1,6 +1,9 @@
 import CallKit
 import AVFoundation
 import SwiftUI
+import os
+
+private let log = Logger(subsystem: "com.futureego.scheduledcall", category: "CallService")
 
 @MainActor
 class CallService: NSObject, ObservableObject {
@@ -50,12 +53,19 @@ class CallService: NSObject, ObservableObject {
     // MARK: - Incoming Call (triggered by morning/evening alarm)
 
     func reportIncomingCall(reason: String = "AI Coach") {
+        log.info("reportIncomingCall reason=\(reason, privacy: .public) isSimulator=\(self.isSimulator)")
         let uuid = UUID()
         callUUID = uuid
 
         if isSimulator {
+            log.info("reportIncomingCall: simulator branch, setting isCallActive=true")
             configureAudioSession()
             isCallActive = true
+            return
+        }
+
+        guard let provider else {
+            log.error("reportIncomingCall: provider is nil on real device — CXProvider init failed")
             return
         }
 
@@ -66,9 +76,12 @@ class CallService: NSObject, ObservableObject {
         update.supportsGrouping = false
         update.supportsHolding = false
 
-        provider?.reportNewIncomingCall(with: uuid, update: update) { error in
+        log.info("reportIncomingCall: calling CXProvider.reportNewIncomingCall uuid=\(uuid.uuidString, privacy: .public)")
+        provider.reportNewIncomingCall(with: uuid, update: update) { error in
             if let error {
-                print("Report incoming call error: \(error)")
+                log.error("reportNewIncomingCall failed: \(error.localizedDescription, privacy: .public)")
+            } else {
+                log.info("reportNewIncomingCall OK")
             }
         }
     }

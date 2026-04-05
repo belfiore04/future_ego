@@ -26,7 +26,7 @@ struct ProfileTabView: View {
 
     // MARK: - Settings Items
 
-    private let settingsItems = ["通知提醒", "日程偏好", "AI Coach 设置", "数据同步", "关于"]
+    private let settingsItems = ["通知提醒", "日程偏好", "常用地点", "AI Coach 设置", "数据同步", "关于"]
 
     // MARK: - Body
 
@@ -253,6 +253,8 @@ struct ProfileTabView: View {
             NotificationSettingsView()
         case "日程偏好":
             SchedulePreferencesView()
+        case "常用地点":
+            LocationSettingsView()
         case "AI Coach 设置":
             AICoachSettingsView()
         case "数据同步":

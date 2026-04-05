@@ -106,20 +106,8 @@ struct DetailPageShell<ContentCardBody: View>: View {
             // 5b. Content slot — each page paints whatever it wants
             // inside the 340 × 459 content card. A top inset leaves
             // space for the giant-time / activity-name / location-line
-            // header stack rendered in step 6. Derivation (in content-
-            // card-local coords, i.e. subtract the card's y=270 origin
-            // from each header element's absolute shell y):
-            //   - Location line (last header) top     = 451 - 270 = 181
-            //   - Location line height @ 15pt system ≈ 15 × 1.2 ≈ 18
-            //   - Location line bottom                = 181 + 18  = 199
-            //   - Safety margin                                   +  8
-            //   - Inset                                           = 207
-            // This keeps the header overlays at their existing absolute
-            // positions (unchanged) while pushing the @ViewBuilder body
-            // below the header zone so ContentLayout titles no longer
-            // collide with the huge-time / activity / location stack.
+            // stack rendered in step 6 (315 → 451 ≈ 136pt header area).
             contentCardBody()
-                .padding(.top, 207)
                 .frame(width: 340, height: 459, alignment: .topLeading)
                 .clipShape(RoundedRectangle(cornerRadius: 29, style: .continuous))
                 .offset(x: 25, y: 270)

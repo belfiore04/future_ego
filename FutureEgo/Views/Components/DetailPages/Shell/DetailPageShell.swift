@@ -106,41 +106,50 @@ struct DetailPageShell<ContentCardBody: View>: View {
             // 5b. Content slot — each page paints whatever it wants
             // inside the 340 × 459 content card. A top inset leaves
             // space for the giant-time / activity-name / location-line
-            // header stack rendered in step 6. Derivation (content-card-
-            // local coords = shell absolute y - 176):
-            //   - Huge time     shell y=315 → card-local top = 139
-            //   - Activity name shell y=403 → card-local top = 227
-            //   - Location line shell y=451 → card-local top = 275
+            // header stack rendered in step 6. The whole header stack
+            // is shifted UP by 100pt from Figma's absolute positions
+            // (option C, user-approved). The rationale: Figma's y=315
+            // puts the huge time 139pt deep into the content card,
+            // leaving only 158pt of usable content area, which is too
+            // tight for 3 of 4 Wave 1 layouts (CheckList ~165,
+            // ShoppingList ~207, StepList up to 230). Shifting up 100pt
+            // straddles the huge time across the Hero↔content boundary
+            // and reclaims 100pt of content area. Derivation (content-
+            // card-local coords = shell absolute y - 176):
+            //   - Huge time     shell y=215 → card-local top =  39
+            //   - Activity name shell y=303 → card-local top = 127
+            //   - Location line shell y=351 → card-local top = 175
             //   - Location line height @ 15pt system ≈ 15 × 1.2 ≈ 18
-            //   - Location line bottom (last header) = 275 + 18 = 293
+            //   - Location line bottom (last header) = 175 + 18 = 193
             //   - Safety margin                                 +  8
-            //   - Inset                                         = 301
-            // Note: Figma places the content-block title at card-local
-            // y≈246 (LocationView @ (25,406) local + title @ (24,16) =
-            // absolute y≈422 → local y≈246), which collides with the
-            // location-line header at local y=275. Figma does absolute
-            // positioning per element and accepts that collision; our
-            // iOS implementation uses a flow layout and pushes the
-            // content body below the header zone. Usable content area
-            // = 459 - 301 = 158pt.
+            //   - Inset                                         = 201
+            // Usable content area = 459 - 201 = 258pt (was 158pt).
+            // Note: this is a deliberate divergence from Figma's
+            // absolute positions; iOS renders closer to a conventional
+            // profile-card layout. The historical Figma values (315 /
+            // 403 / 451 / 301) are preserved here only as a reference
+            // to the shift we made.
             contentCardBody()
-                .padding(.top, 301)
+                .padding(.top, 201)
                 .frame(width: 340, height: 459, alignment: .topLeading)
                 .clipShape(RoundedRectangle(cornerRadius: 29, style: .continuous))
                 .offset(x: 25, y: 176)
 
-            // 6a. Giant time @ (41, 315). Positioned on top of the
-            // content card so it visually straddles the Hero↔content
-            // boundary (the baseline sits below y=176). The maxWidth
-            // frame (340 content card - 2×16 padding = 308) gives
-            // HugeTimeDisplay's minimumScaleFactor an anchor to shrink
-            // against for long timers like "1:23:21".
+            // 6a. Giant time @ (41, 215) — shifted UP 100pt from
+            // Figma's y=315 per option C. The new position straddles
+            // the Hero↔content boundary: span y=215..~311 crosses the
+            // Hero bottom (y=239) by 24pt and extends ~72pt into the
+            // content card. The maxWidth frame (340 content card -
+            // 2×16 padding = 308) gives HugeTimeDisplay's
+            // minimumScaleFactor an anchor to shrink against for long
+            // timers like "1:23:21".
             HugeTimeDisplay(timeString: timeString, palette: palette)
                 .frame(maxWidth: 308, alignment: .leading)
-                .offset(x: 41, y: 315)
+                .offset(x: 41, y: 215)
 
-            // 6b. Activity name @ (41, 403) 22pt SF Pro Bold. maxWidth
-            // 308 clamps long names like "Diaz · Need韩国创意料理（韩餐）"
+            // 6b. Activity name @ (41, 303) 22pt SF Pro Bold — shifted
+            // UP 100pt from Figma's y=403 per option C. maxWidth 308
+            // clamps long names like "Diaz · Need韩国创意料理（韩餐）"
             // within the content card and gives minimumScaleFactor an
             // anchor width to trigger on.
             Text(activityName)
@@ -149,16 +158,17 @@ struct DetailPageShell<ContentCardBody: View>: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
                 .frame(maxWidth: 308, alignment: .leading)
-                .offset(x: 41, y: 403)
+                .offset(x: 41, y: 303)
 
-            // 6c. Location line @ (41, 451) 15pt SF Pro regular black
+            // 6c. Location line @ (41, 351) 15pt SF Pro regular black —
+            // shifted UP 100pt from Figma's y=451 per option C.
             HStack(spacing: 4) {
                 Text("◎")
                 Text(locationLine)
             }
             .font(.system(size: 15, weight: .regular))
             .foregroundStyle(Color.black)
-            .offset(x: 41, y: 451)
+            .offset(x: 41, y: 351)
 
             // 7. Floating action pills — horizontally centered at
             // y=741.5 (top of the 226 × 42.5 pill). The outer container

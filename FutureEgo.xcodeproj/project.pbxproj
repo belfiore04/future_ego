@@ -33,6 +33,7 @@
 		41D16D4814E5E9028872CDEE /* DesignTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73692D4959164E11B7A14EB0 /* DesignTokens.swift */; };
 		41EEC8553F12F0B0335F66D3 /* ActivityCardStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62F82F490A081B9E18447D36 /* ActivityCardStyle.swift */; };
 		42052C6705DF0927767D03D3 /* ConcentratingDetailPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = E28736ED77F85C8027DF609A /* ConcentratingDetailPage.swift */; };
+		425E936E5DC36A7D295330AC /* InstrumentSans.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 2654E4307B1834F4FA2293C6 /* InstrumentSans.ttf */; };
 		441AAB920390553D018F95F0 /* FutureEgoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDB1400107BEC35F4E590BD9 /* FutureEgoApp.swift */; };
 		4AF8147576C11EDF0D1C1BDD /* WeatherService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E43DD04987A56D9CF9C92F36 /* WeatherService.swift */; };
 		4DCB2EF9A73BDA1C749449FD /* CookDetailPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8471F7458FFD5B326D338EC4 /* CookDetailPage.swift */; };
@@ -93,6 +94,7 @@
 		1C9E1C6DD162423BE86E5D91 /* SampleData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SampleData.swift; sourceTree = "<group>"; };
 		1EC9FB126D51DC5563D87307 /* ShoppingListLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingListLayout.swift; sourceTree = "<group>"; };
 		2010673727221CF6FB75E9DA /* SettingsViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViews.swift; sourceTree = "<group>"; };
+		2654E4307B1834F4FA2293C6 /* InstrumentSans.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = InstrumentSans.ttf; sourceTree = "<group>"; };
 		279802B769D13BAE496A917E /* CallingOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallingOverlay.swift; sourceTree = "<group>"; };
 		2D65A5DCB13B347A04F26F8D /* ReminderService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReminderService.swift; sourceTree = "<group>"; };
 		352B247C7E55347B35F0DAB2 /* StickerOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StickerOverlay.swift; sourceTree = "<group>"; };
@@ -156,14 +158,6 @@
 		FFDB162A70E8C6B9E8D9DAE1 /* ProgressRing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressRing.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
-/* Begin PBXFileSystemSynchronizedRootGroup section */
-		0BE9F6D82F83A1510019D99D /* Fonts */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = Fonts;
-			sourceTree = "<group>";
-		};
-/* End PBXFileSystemSynchronizedRootGroup section */
-
 /* Begin PBXGroup section */
 		07F380A1D6B1111E27871FA8 /* Cards */ = {
 			isa = PBXGroup;
@@ -190,6 +184,14 @@
 				6AF4AF26BE9F403CAA170367 /* ReviewTabView.swift */,
 			);
 			path = Tabs;
+			sourceTree = "<group>";
+		};
+		1014434749C37707328C7269 /* Fonts */ = {
+			isa = PBXGroup;
+			children = (
+				2654E4307B1834F4FA2293C6 /* InstrumentSans.ttf */,
+			);
+			path = Fonts;
 			sourceTree = "<group>";
 		};
 		350FA8A18C9AE88FC178E274 /* Components */ = {
@@ -354,10 +356,10 @@
 		F3DA1BBADA34FB83EF46E85A /* FutureEgo */ = {
 			isa = PBXGroup;
 			children = (
-				0BE9F6D82F83A1510019D99D /* Fonts */,
 				1A4BD3EA819C604585F36C44 /* Assets.xcassets */,
 				89657A7AEDE0B57B19879993 /* Info.plist */,
 				F0259DB03ADF093A19913B27 /* App */,
+				1014434749C37707328C7269 /* Fonts */,
 				476DACF399CD08ECD6F46BA1 /* Models */,
 				76ECB1262F052DBDA50A043E /* Services */,
 				DC77BBAC29241FE4DECA9C6B /* Views */,
@@ -378,9 +380,6 @@
 			buildRules = (
 			);
 			dependencies = (
-			);
-			fileSystemSynchronizedGroups = (
-				0BE9F6D82F83A1510019D99D /* Fonts */,
 			);
 			name = FutureEgo;
 			packageProductDependencies = (
@@ -429,6 +428,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				3D0145FC83D3E795740D544C /* Assets.xcassets in Resources */,
+				425E936E5DC36A7D295330AC /* InstrumentSans.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

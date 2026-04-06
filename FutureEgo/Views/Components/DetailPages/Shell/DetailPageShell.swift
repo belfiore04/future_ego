@@ -28,7 +28,7 @@ struct DetailPageShell<InfoSection: View, InteractiveSection: View>: View {
     let infoSection: () -> InfoSection
     let interactiveSection: () -> InteractiveSection
 
-    @State private var isFolded = false
+    @State private var isFolded = true
     @State private var dragOffset: CGFloat = 0
 
     init(
@@ -51,10 +51,10 @@ struct DetailPageShell<InfoSection: View, InteractiveSection: View>: View {
     private let horizontalPad: CGFloat = 25
     /// Back card height as a fraction of available height.
     private let backCardRatio: CGFloat = 0.28
-    /// Front card top position in UNFOLD state (fraction of back card height).
-    private let unfoldedRatio: CGFloat = 0.25
+    /// Front card top position in UNFOLD state (fraction of back card height)
+    private let unfoldedRatio: CGFloat = 0.75
     /// Front card top position in FOLD state (fraction of back card height).
-    private let foldedRatio: CGFloat = 0.15
+    private let foldedRatio: CGFloat = 0.25
 
     // MARK: Body
 
@@ -87,6 +87,7 @@ struct DetailPageShell<InfoSection: View, InteractiveSection: View>: View {
                         .padding(.trailing, backH * 0.1)
                         .padding(.top,20)
                     }
+                    
 
                 // ── Front card ──
                 VStack(
@@ -108,7 +109,7 @@ struct DetailPageShell<InfoSection: View, InteractiveSection: View>: View {
                         interactiveSection()
                     }
                 }
-                .frame(width: cardW, height: geo.size.height - frontY)
+                .frame(width: cardW, height: 600)
                 .background(Color.white)
                 .clipShape(
                     RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
@@ -140,8 +141,10 @@ struct DetailPageShell<InfoSection: View, InteractiveSection: View>: View {
                             }
                         }
                 )
-            }.padding(.top,60)
-        }
+            }
+            .padding(.top,60)
+            
+        }.padding(.bottom,100)
     }
 }
 

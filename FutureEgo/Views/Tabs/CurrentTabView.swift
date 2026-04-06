@@ -170,8 +170,7 @@ struct CurrentTabView: View {
                     .font(.system(size: 40))
                     .frame(width: 60, height: 60)
             }
-            .buttonStyle(.glass)
-            .tint(currentPalette.primary)
+            .buttonStyle(.glassProminent).tint(currentPalette.primary)
         } else {
             Button(action: action) {
                 Image(systemName: systemImage)

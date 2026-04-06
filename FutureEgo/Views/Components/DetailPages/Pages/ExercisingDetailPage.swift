@@ -46,7 +46,8 @@ struct ExercisingDetailPage: View {
             }
         } interactiveSection: {
             // ── Interactive section ──
-            VStack(spacing: 0) {
+            VStack(alignment: .leading,
+                   spacing: 0) {
                 CheckListLayout(
                     palette: .green,
                     secondaryTitle: nil,

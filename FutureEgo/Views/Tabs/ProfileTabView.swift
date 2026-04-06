@@ -26,7 +26,7 @@ struct ProfileTabView: View {
 
     // MARK: - Settings Items
 
-    private let settingsItems = ["通知提醒", "日程偏好", "常用地点", "AI Coach 设置", "数据同步", "关于"]
+    private let settingsItems = ["通知提醒", "日程偏好", "常用地点", "AI Coach 设置", "数据同步", "关于", "开发者选项"]
 
     // MARK: - Body
 
@@ -261,6 +261,8 @@ struct ProfileTabView: View {
             DataSyncView()
         case "关于":
             AboutView()
+        case "开发者选项":
+            DeveloperSettingsView()
         default:
             Text(item)
         }

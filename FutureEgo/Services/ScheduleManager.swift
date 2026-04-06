@@ -14,8 +14,35 @@ class ScheduleManager: ObservableObject {
     @Published var schedule: [ScheduleItem] = []
     @Published var currentIndex: Int = 0
 
+    @AppStorage("use_mock_data") private var useMockData = false
+
     private init() {
         LaunchTrace.mark("ScheduleManager.init (empty schedule)")
+        if useMockData {
+            loadMockData()
+        }
+    }
+
+    // MARK: - Mock Data (Developer)
+
+    /// Replaces the schedule with `SampleData.schedule` for testing all
+    /// activity detail page types. Called when the developer toggle is ON.
+    func loadMockData() {
+        schedule = SampleData.schedule
+        currentIndex = 0
+    }
+
+    /// Restores the schedule to empty when mock mode is turned off.
+    func clearMockData() {
+        schedule = []
+        currentIndex = 0
+    }
+
+    /// Advances `currentIndex` to the next item, wrapping around.
+    /// Only meaningful when mock data is loaded.
+    func advanceToNextActivity() {
+        guard !schedule.isEmpty else { return }
+        currentIndex = (currentIndex + 1) % schedule.count
     }
 
     // MARK: - Snapshot for AI Context

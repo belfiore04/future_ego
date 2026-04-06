@@ -28,6 +28,9 @@ struct CurrentTabView: View {
     // Pulsing coach-mark around phone button on first empty state.
     @State private var hintPulse = false
 
+    // Developer: mock-data mode toggle for the "next activity" button.
+    @AppStorage("use_mock_data") private var useMockData = false
+
     /// Current activity derived from the schedule (nil when empty / out of
     /// bounds). Drives the router dispatch below.
     private var currentActivity: Activity? {
@@ -57,6 +60,13 @@ struct CurrentTabView: View {
             floatingButtons
                 .padding(.trailing, 20)
                 .padding(.bottom, 24)
+        }
+        .overlay(alignment: .topTrailing) {
+            if useMockData {
+                nextActivityButton
+                    .padding(.trailing, 20)
+                    .padding(.top, 56)
+            }
         }
         .sheet(isPresented: $showCamera) {
             CameraPickerView(image: $capturedImage)
@@ -91,6 +101,27 @@ struct CurrentTabView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.top, 80)
+    }
+
+    // MARK: - Next Activity Button (Developer)
+
+    /// Small pill that cycles through mock schedule items.
+    /// Only rendered when `use_mock_data` is true.
+    private var nextActivityButton: some View {
+        Button {
+            ScheduleManager.shared.advanceToNextActivity()
+        } label: {
+            HStack(spacing: 4) {
+                Text("下一个")
+                    .font(.system(size: 13, weight: .medium))
+                Image(systemName: "forward.fill")
+                    .font(.system(size: 11))
+            }
+            .foregroundColor(.white)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(Color.orange, in: Capsule())
+        }
     }
 
     // MARK: - Floating Liquid Glass Buttons

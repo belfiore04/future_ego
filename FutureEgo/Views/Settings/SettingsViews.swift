@@ -264,6 +264,34 @@ struct AboutView: View {
     }
 }
 
+// MARK: - DeveloperSettingsView
+
+struct DeveloperSettingsView: View {
+    @AppStorage("use_mock_data") private var useMockData = false
+
+    var body: some View {
+        Form {
+            Section(
+                header: Text("测试数据"),
+                footer: Text("开启后加载 8 条示例日程，覆盖全部 6 种活动类型。在「此刻」页可用「下一个」按钮逐条切换。")
+            ) {
+                Toggle("使用测试数据", isOn: $useMockData)
+            }
+        }
+        .navigationTitle("开发者选项")
+        .navigationBarTitleDisplayMode(.inline)
+        .onChange(of: useMockData) { _, newValue in
+            Task { @MainActor in
+                if newValue {
+                    ScheduleManager.shared.loadMockData()
+                } else {
+                    ScheduleManager.shared.clearMockData()
+                }
+            }
+        }
+    }
+}
+
 // MARK: - Previews
 
 #Preview("通知提醒") {
@@ -284,4 +312,8 @@ struct AboutView: View {
 
 #Preview("关于") {
     NavigationStack { AboutView() }
+}
+
+#Preview("开发者选项") {
+    NavigationStack { DeveloperSettingsView() }
 }

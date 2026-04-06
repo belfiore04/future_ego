@@ -38,6 +38,16 @@ struct CurrentTabView: View {
         return schedule[currentIndex].detail
     }
 
+    private var currentPalette: DetailPagePalette {
+        guard let activity = currentActivity else { return .green }
+        switch activity {
+        case .exercising: return .green
+        case .outing: return .blue
+        case .concentrating: return .purple
+        case .eating: return .orange
+        }
+    }
+
     var body: some View {
         Group {
             if let activity = currentActivity {
@@ -159,16 +169,20 @@ struct CurrentTabView: View {
                 Image(systemName: systemImage)
                     .font(.system(size: 40))
                     .frame(width: 60, height: 60)
-
             }
             .buttonStyle(.glass)
+            .tint(currentPalette.primary)
         } else {
             Button(action: action) {
                 Image(systemName: systemImage)
                     .font(.system(size: 20))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(currentPalette.primary)
                     .frame(width: 60, height: 60)
-                    .background(.ultraThinMaterial, in: Circle())
+                    .background(
+                        currentPalette.light.opacity(0.25),
+                        in: Circle()
+                    )
+                    .overlay(Circle().stroke(currentPalette.primary.opacity(0.3), lineWidth: 1))
                     .shadow(color: .black.opacity(0.1), radius: 8, y: 4)
             }
         }

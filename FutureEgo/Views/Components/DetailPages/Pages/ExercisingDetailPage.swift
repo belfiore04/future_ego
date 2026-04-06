@@ -32,16 +32,17 @@ struct ExercisingDetailPage: View {
                 HugeTimeDisplay(timeString: timeString, palette: .green)
 
                 Text("\(detail.exerciseType) · \(detail.venueName)")
-                    .font(.system(size: 20, weight: .bold))
+                    .font(.system(size: 22, weight: .bold))
                     .foregroundStyle(DetailPagePalette.green.primary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
-
+                    .padding(.bottom,15)
                 HStack(spacing: 4) {
                     Text("◎").foregroundStyle(DetailPagePalette.green.primary)
                     Text(detail.venueAddress).foregroundStyle(.black)
                 }
                 .font(.system(size: 15))
+                .padding(.bottom,10)
             }
         } interactiveSection: {
             // ── Interactive section ──

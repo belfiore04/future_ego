@@ -26,12 +26,13 @@ struct HugeTimeDisplay: View {
 
     var body: some View {
         Text(timeString)
+            .padding(.leading,-10)
             .font(
                 .custom("Instrument Sans", size: 96, relativeTo: .largeTitle)
             )
             // Guarantees a bold weight whether Instrument Sans resolved
             // or SwiftUI fell back to the system font.
-            .fontWeight(.bold)
+            .fontWeight(.black)
             .foregroundStyle(palette.primary)
             .lineLimit(1)
             .minimumScaleFactor(0.5)

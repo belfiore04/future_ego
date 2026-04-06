@@ -157,7 +157,9 @@ struct CurrentTabView: View {
         if #available(iOS 26, *) {
             Button(action: action) {
                 Image(systemName: systemImage)
-                    .font(.system(size: 20))
+                    .font(.system(size: 40))
+                    .frame(width: 60, height: 60)
+
             }
             .buttonStyle(.glass)
         } else {
@@ -165,7 +167,7 @@ struct CurrentTabView: View {
                 Image(systemName: systemImage)
                     .font(.system(size: 20))
                     .foregroundStyle(.primary)
-                    .frame(width: 47, height: 44)
+                    .frame(width: 60, height: 60)
                     .background(.ultraThinMaterial, in: Circle())
                     .shadow(color: .black.opacity(0.1), radius: 8, y: 4)
             }

@@ -42,7 +42,7 @@ struct CheckListLayout: View {
     )
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 20) {
             if let secondaryTitle {
                 Text(secondaryTitle)
                     .font(.system(size: 14, weight: .regular))
@@ -52,15 +52,13 @@ struct CheckListLayout: View {
             Text(primaryTitle)
                 .font(.system(size: 14, weight: .regular))
                 .foregroundStyle(titleGray)
+                .padding(.bottom,-7)
 
             // 1pt divider under the titles in the palette's brand color.
             // Source: `.pm/2026-04-06/ground-truth.md` §2 exercising
             // LocationView → "Line 2 分隔线" with stroke matching the
             // Hero palette.
-            Rectangle()
-                .fill(palette.primary)
-                .frame(height: 1)
-                .padding(.vertical, 4)
+
 
             ForEach(items.indices, id: \.self) { i in
                 CheckItemRowView(
@@ -72,7 +70,7 @@ struct CheckListLayout: View {
 
         }
         .padding(.horizontal, 24)
-        .padding(.top, 20)
+        .padding(.top, 15)
     }
 
     /// Returns a safe binding into `checkedStates` for row `i`. If the
@@ -119,7 +117,7 @@ private struct CheckItemRowView: View {
             isChecked.toggle()
         } label: {
             HStack(spacing: 12) {
-                RoundedRectangle(cornerRadius: 4, style: .continuous)
+                Circle()
                     .stroke(
                         isChecked ? palette.primary : Color.black.opacity(0.15),
                         lineWidth: 1.5

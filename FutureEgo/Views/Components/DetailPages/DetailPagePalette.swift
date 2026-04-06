@@ -44,4 +44,16 @@ enum DetailPagePalette {
             return Color(red: 0xB2 / 255.0, green: 0x39 / 255.0, blue: 0xEA / 255.0)
         }
     }
+    var light: Color {
+        switch self{
+        case .green:
+            return Color(red: 0x6E / 255.0,green: 0xC6 / 255.0,blue:0x45 / 255.0)
+        case .blue:
+            return Color(red: 0x87 / 255.0, green: 0xB6 / 255.0, blue: 0x48 / 255.0)
+        case .orange:
+            return Color(red:0xFF / 255.0, green:0x82 / 255.0,blue:0x48 / 255.0)
+        case .purple:
+            return Color(red:0xCA / 255.0,green:0x72 / 255.0,blue: 0xF2 / 255.0)
+        }
+    }
 }

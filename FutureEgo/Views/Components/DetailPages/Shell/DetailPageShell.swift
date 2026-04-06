@@ -52,7 +52,7 @@ struct DetailPageShell<InfoSection: View, InteractiveSection: View>: View {
     /// Back card height as a fraction of available height.
     private let backCardRatio: CGFloat = 0.28
     /// Front card top position in UNFOLD state (fraction of back card height).
-    private let unfoldedRatio: CGFloat = 0.55
+    private let unfoldedRatio: CGFloat = 0.25
     /// Front card top position in FOLD state (fraction of back card height).
     private let foldedRatio: CGFloat = 0.15
 
@@ -73,26 +73,35 @@ struct DetailPageShell<InfoSection: View, InteractiveSection: View>: View {
                 // ── Back card ──
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                     .fill(palette.primary)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                            .stroke(palette.primary,lineWidth:1)
+                    )
                     .frame(width: cardW, height: backH)
-                    .overlay(alignment: .trailing) {
+                    .overlay(alignment: .topTrailing) {
                         ProgressRingView(
                             dailyProgress: dailyProgress,
                             activityProgress: activityProgress
                         )
                         .frame(width: backH * 0.55, height: backH * 0.55)
                         .padding(.trailing, backH * 0.1)
+                        .padding(.top,20)
                     }
 
                 // ── Front card ──
-                VStack(spacing: 0) {
+                VStack(
+                    alignment: .leading,
+                    spacing: 0,
+
+                ) {
                     infoSection()
                         .padding(.horizontal, 24)
                         .padding(.top, 24)
-                        .padding(.bottom, 16)
+                        .padding(.bottom, 14)
 
                     Rectangle()
-                        .fill(Color.black.opacity(0.1))
-                        .frame(height: 0.5)
+                        .fill(palette.primary)
+                        .frame(height: 1)
                         .padding(.horizontal, 24)
 
                     ScrollView(.vertical, showsIndicators: false) {
@@ -103,6 +112,10 @@ struct DetailPageShell<InfoSection: View, InteractiveSection: View>: View {
                 .background(Color.white)
                 .clipShape(
                     RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .stroke(palette.primary,lineWidth:1)
                 )
                 .shadow(color: .black.opacity(0.08), radius: 12, y: -2)
                 .offset(y: frontY)
@@ -127,7 +140,7 @@ struct DetailPageShell<InfoSection: View, InteractiveSection: View>: View {
                             }
                         }
                 )
-            }
+            }.padding(.top,60)
         }
     }
 }
@@ -143,13 +156,15 @@ struct DetailPageShell<InfoSection: View, InteractiveSection: View>: View {
         VStack(alignment: .leading, spacing: 6) {
             HugeTimeDisplay(timeString: "12:00", palette: .green)
             Text("胸部力量训练 · 乐刻健身房")
-                .font(.system(size: 20, weight: .bold))
+                .font(.system(size: 25, weight: .bold))
                 .foregroundStyle(DetailPagePalette.green.primary)
+                .padding(.bottom,12)
             HStack(spacing: 4) {
                 Text("◎").foregroundStyle(DetailPagePalette.green.primary)
                 Text("慧多港商场 5F").foregroundStyle(.black)
             }
             .font(.system(size: 15))
+            .padding(.bottom,20)
         }
     } interactiveSection: {
         VStack(alignment: .leading, spacing: 8) {

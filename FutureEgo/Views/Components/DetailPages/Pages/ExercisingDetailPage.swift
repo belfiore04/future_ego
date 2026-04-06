@@ -1,90 +1,86 @@
 import SwiftUI
 
-// MARK: - ExercisingDetailPage
-//
-// Wave 2 concrete detail page for `Activity.exercising`. Assembles the
-// shared `DetailPageShell` (green palette) with a `CheckListLayout`
-// content slot that renders the "记得要带 / 推荐你带上" equipment list
-// described in `.pm/2026-04-06/ground-truth.md` §1 21:1824 and §4
-// "每页独有的部分".
-//
-// Field mapping (from `.pm/2026-04-06/existing-code-summary.md`):
-//   - detail.time          → "HH:mm" timeString
-//   - detail.exerciseType  → first half of activity name
-//   - detail.venueName     → second half of activity name (" · ")
-//   - detail.venueAddress  → location line (shell prepends "◎")
-//   - detail.userEquipment → CheckListLayout items
-//   - detail.inspirationQuote → Hero motivational copy (fallback provided)
-//
-// NOTE: The shell's `locationLine` contract already prepends the "◎"
-// glyph, so we pass the raw address and do NOT inject our own prefix.
-
 struct ExercisingDetailPage: View {
     let detail: ExercisingDetail
-    @State private var checkedStates: [Bool]
+    @State private var userCheckedStates: [Bool]
+    @State private var aiCheckedStates: [Bool]
 
     init(detail: ExercisingDetail) {
         self.detail = detail
-        _checkedStates = State(
-            initialValue: Array(repeating: false, count: detail.userEquipment.count)
-        )
+        _userCheckedStates = State(
+            initialValue: Array(repeating: false,
+                                count: detail.userEquipment.count))
+        _aiCheckedStates = State(
+            initialValue: Array(repeating: false,
+                                count: detail.aiSuggestedEquipment.count))
     }
-
-    // MARK: - Derived strings
 
     private var timeString: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm"
-        return formatter.string(from: detail.time)
+        let f = DateFormatter()
+        f.dateFormat = "HH:mm"
+        return f.string(from: detail.time)
     }
-
-    private var activityName: String {
-        "\(detail.exerciseType) · \(detail.venueName)"
-    }
-
-    private var motivationalText: String {
-        detail.inspirationQuote
-            ?? "想象你已经做完了\(detail.exerciseType)，那种充实的感觉！"
-    }
-
-    // MARK: - Body
 
     var body: some View {
         DetailPageShell(
             palette: .green,
-            timeString: timeString,
-            activityName: activityName,
-            locationLine: detail.venueAddress,
-            motivationalText: motivationalText,
-            heroSymbolName: "figure.strengthtraining.traditional"
+            dailyProgress: 0.65,
+            activityProgress: 0.3
         ) {
-            CheckListLayout(
-                palette: .green,
-                secondaryTitle: "记得要带",
-                primaryTitle: "推荐你带上",
-                items: detail.userEquipment,
-                checkedStates: $checkedStates
-            )
+            // ── Info section ──
+            VStack(alignment: .leading, spacing: 6) {
+                HugeTimeDisplay(timeString: timeString, palette: .green)
+
+                Text("\(detail.exerciseType) · \(detail.venueName)")
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundStyle(DetailPagePalette.green.primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+
+                HStack(spacing: 4) {
+                    Text("◎").foregroundStyle(DetailPagePalette.green.primary)
+                    Text(detail.venueAddress).foregroundStyle(.black)
+                }
+                .font(.system(size: 15))
+            }
+        } interactiveSection: {
+            // ── Interactive section ──
+            VStack(spacing: 0) {
+                CheckListLayout(
+                    palette: .green,
+                    secondaryTitle: nil,
+                    primaryTitle: "记得要带",
+                    items: detail.userEquipment,
+                    checkedStates: $userCheckedStates
+                )
+
+                if !detail.aiSuggestedEquipment.isEmpty {
+                    CheckListLayout(
+                        palette: .green,
+                        secondaryTitle: nil,
+                        primaryTitle: "推荐你带上",
+                        items: detail.aiSuggestedEquipment,
+                        checkedStates: $aiCheckedStates
+                    )
+                }
+            }
         }
     }
 }
 
-// MARK: - Preview
-
-#Preview("ExercisingDetailPage — green") {
+#Preview("ExercisingDetailPage") {
     var mock = ExercisingDetail(
         time: {
-            var components = DateComponents()
-            components.hour = 12
-            components.minute = 0
-            return Calendar.current.date(from: components) ?? Date()
+            var c = DateComponents()
+            c.hour = 12; c.minute = 0
+            return Calendar.current.date(from: c) ?? Date()
         }(),
         exerciseType: "胸部力量训练",
         venueName: "乐刻健身房",
         venueAddress: "慧多港商场 5F",
         userEquipment: ["毛巾", "运动手表", "水杯"],
-        aiSuggestedEquipment: []
+        aiSuggestedEquipment: ["运动耳机"]
     )
-    mock.inspirationQuote = "想象你已经做完了胸部力量训练，胸部肌肉饱满紧致，身体也更加挺拔，你已经变得越来越自信啦！"
+    mock.inspirationQuote = "想象你已经做完了胸部力量训练，胸部肌肉饱满紧致！"
     return ExercisingDetailPage(detail: mock)
 }

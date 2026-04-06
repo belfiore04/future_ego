@@ -70,7 +70,6 @@ struct CheckListLayout: View {
                 )
             }
 
-            Spacer(minLength: 0)
         }
         .padding(.horizontal, 24)
         .padding(.top, 20)

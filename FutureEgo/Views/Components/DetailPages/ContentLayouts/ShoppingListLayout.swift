@@ -87,11 +87,7 @@ struct ShoppingListLayout: View {
                     .fill(Self.shoppingBoxOrange)
             )
 
-            Spacer(minLength: 0)
         }
-        // Horizontal padding matches the sibling ContentLayouts so the
-        // block sits flush with the content-card's interior gutter and
-        // stays inside the 340-wide card (Phase 2b #8).
         .padding(.horizontal, 24)
         .padding(.top, 20)
     }

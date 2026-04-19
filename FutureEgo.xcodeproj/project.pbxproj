@@ -128,7 +128,7 @@
 		868BC0C59ADB5995747F7E90 /* VoiceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceService.swift; sourceTree = "<group>"; };
 		88920319B8F6880CFA042D19 /* ExercisingDetailPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExercisingDetailPage.swift; sourceTree = "<group>"; };
 		89657A7AEDE0B57B19879993 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
-		8E7BD79C246615812F549D25 /* FutureEgo.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = FutureEgo.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		8E7BD79C246615812F549D25 /* FutureEgo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FutureEgo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		91F9CEF1B2E84020144ACDF5 /* ReviewCharts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewCharts.swift; sourceTree = "<group>"; };
 		9388C09DE3C2D8CE167F6C36 /* OutingDetailPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutingDetailPage.swift; sourceTree = "<group>"; };
 		97287D8EAE8630D3703E3794 /* LaunchTrace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchTrace.swift; sourceTree = "<group>"; };
@@ -398,7 +398,6 @@
 				LastUpgradeCheck = 1500;
 				TargetAttributes = {
 					33BCF2C1E55A9DF3288CF48E = {
-						DevelopmentTeam = ATS2UB65C4;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -579,6 +578,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = 8LTXC5VT4L;
 				INFOPLIST_FILE = FutureEgo/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -595,6 +595,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = 8LTXC5VT4L;
 				INFOPLIST_FILE = FutureEgo/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

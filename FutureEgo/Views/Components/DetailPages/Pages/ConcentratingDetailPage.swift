@@ -32,16 +32,20 @@ struct ConcentratingDetailPage: View {
         ) {
             VStack(alignment: .leading, spacing: 6) {
                 HugeTimeDisplay(timeString: timerString, palette: .purple)
-
+                
                 Text(detail.taskName)
                     .font(.system(size: 20, weight: .bold))
                     .foregroundStyle(DetailPagePalette.purple.primary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
-
-                Text("截止 \(deadlineString)")
-                    .font(.system(size: 15))
-                    .foregroundStyle(.black)
+                    .padding(.bottom,10)
+                HStack(spacing:4){
+                    Text("◎").foregroundStyle(DetailPagePalette.purple.primary)
+                    Text("需要在 \(deadlineString)前完成")
+                        .font(.system(size: 15))
+                        .foregroundStyle(.black)
+                    
+                }.padding(.bottom,10)
             }
         } interactiveSection: {
             StepListLayout(

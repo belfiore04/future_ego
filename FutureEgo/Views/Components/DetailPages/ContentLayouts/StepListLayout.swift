@@ -70,10 +70,6 @@ struct StepListLayout: View {
                 .font(.system(size: 14, weight: .regular))
                 .foregroundStyle(Color(hex: "8E8E93"))
 
-            Rectangle()
-                .fill(palette.primary)
-                .frame(height: 1)
-                .padding(.vertical, 4)
 
             VStack(spacing: 8) {
                 ForEach(steps.indices, id: \.self) { index in
@@ -108,7 +104,7 @@ private struct StepItemRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            RoundedRectangle(cornerRadius: 4)
+            Circle()
                 .stroke(strokeColor, lineWidth: 1.5)
                 .frame(width: 20, height: 20)
                 .overlay {

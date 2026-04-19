@@ -12,7 +12,11 @@ settings:
     TARGETED_DEVICE_FAMILY: "1"
     DEVELOPMENT_TEAM: "ATS2UB65C4"
     CODE_SIGN_STYLE: "Automatic"
-    CODE_SIGN_ENTITLEMENTS: FutureEgo/FutureEgo.entitlements
+    # Entitlements file intentionally NOT wired here. The only key we had
+    # was `com.apple.developer.usernotifications.time-sensitive`, which is
+    # not available on Personal (free) Apple developer teams. Reconnect by
+    # restoring the following line once on a paid Developer Program:
+    # CODE_SIGN_ENTITLEMENTS: FutureEgo/FutureEgo.entitlements
 
 targets:
   FutureEgo:

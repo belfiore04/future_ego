@@ -31,6 +31,25 @@ struct DetailPageShell<InfoSection: View, InteractiveSection: View>: View {
     @State private var isFolded = true
     @State private var dragOffset: CGFloat = 0
 
+    /// Bumped once when the drag crosses the commit threshold in a direction
+    /// that would actually flip `isFolded`. Drives `.sensoryFeedback`.
+    @State private var hapticTick: Int = 0
+    /// Direction the current drag last committed a haptic for: -1 = fold,
+    /// +1 = unfold, 0 = neutral. Prevents continuous buzzing while the
+    /// finger stays past the threshold.
+    @State private var hapticDirection: Int = 0
+
+    /// How much weight the drag "feels like" inside the valid range.
+    /// 1.0 = finger and card move together; lower = card lags behind,
+    /// feels heavier. 0.85 gives a subtle pull-back without feeling laggy.
+    private let dragFollowRatio: CGFloat = 0.85
+    /// Rubber-band stiffness past the range. Smaller = resistance kicks in
+    /// sooner. 90 roughly matches iOS scroll overscroll.
+    private let rubberBandStiffness: CGFloat = 90
+    /// How far the finger has to travel from neutral before we fire the
+    /// "打火" haptic. Matches the commit thresholds in onEnded.
+    private let commitThreshold: CGFloat = 40
+
     init(
         palette: DetailPagePalette,
         dailyProgress: Double = 0.5,
@@ -65,7 +84,11 @@ struct DetailPageShell<InfoSection: View, InteractiveSection: View>: View {
             let unfoldedY = backH * unfoldedRatio
             let foldedY = backH * foldedRatio
             let target = isFolded ? foldedY : unfoldedY
-            let frontY = max(foldedY, min(unfoldedY, target + dragOffset))
+            // Apply a < 1.0 follow ratio inside the range so the card feels
+            // slightly heavier than the finger, then rubber-band any overflow
+            // past the fold / unfold stops.
+            let rawY = target + dragOffset * dragFollowRatio
+            let frontY = rubberBand(rawY, lower: foldedY, upper: unfoldedY)
 
             ZStack(alignment: .top) {
                 Color.white.ignoresSafeArea()
@@ -122,7 +145,29 @@ struct DetailPageShell<InfoSection: View, InteractiveSection: View>: View {
                 .offset(y: frontY)
                 .gesture(
                     DragGesture()
-                        .onChanged { dragOffset = $0.translation.height }
+                        .onChanged { value in
+                            dragOffset = value.translation.height
+
+                            // Fire one rigid "打火" click the moment the
+                            // finger crosses the commit threshold in a
+                            // direction that would actually change state.
+                            // Guarded by hapticDirection so we only buzz on
+                            // the edge, not every frame past the threshold.
+                            let raw = value.translation.height
+                            let newDir: Int
+                            if raw < -commitThreshold { newDir = -1 }
+                            else if raw > commitThreshold { newDir = 1 }
+                            else { newDir = 0 }
+
+                            if newDir != hapticDirection {
+                                let wouldChange = (newDir == -1 && !isFolded)
+                                               || (newDir == 1 && isFolded)
+                                if wouldChange {
+                                    hapticTick &+= 1
+                                }
+                                hapticDirection = newDir
+                            }
+                        }
                         .onEnded { value in
                             let velocity = value.predictedEndTranslation.height
                                 - value.translation.height
@@ -139,12 +184,31 @@ struct DetailPageShell<InfoSection: View, InteractiveSection: View>: View {
                                 }
                                 dragOffset = 0
                             }
+                            hapticDirection = 0
                         }
                 )
+                .sensoryFeedback(.impact(flexibility: .rigid, intensity: 0.9),
+                                 trigger: hapticTick)
             }
             .padding(.top,60)
-            
+
         }.padding(.bottom,100)
+    }
+
+    /// Classic iOS rubber-band: values inside `[lower, upper]` pass through;
+    /// values outside are compressed asymptotically so the finger can keep
+    /// moving but the card barely follows. `stiffness` controls how fast the
+    /// resistance ramps — smaller = more resistance sooner.
+    private func rubberBand(_ value: CGFloat, lower: CGFloat, upper: CGFloat) -> CGFloat {
+        if value < lower {
+            let over = lower - value
+            return lower - over / (1 + over / rubberBandStiffness)
+        }
+        if value > upper {
+            let over = value - upper
+            return upper + over / (1 + over / rubberBandStiffness)
+        }
+        return value
     }
 }
 

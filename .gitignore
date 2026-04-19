@@ -1,0 +1,31 @@
+# macOS Finder metadata
+.DS_Store
+**/.DS_Store
+
+# Xcode user-specific state (not shared across machines / collaborators)
+xcuserdata/
+**/xcuserdata/
+*.xcuserstate
+*.xcuserdatad/
+
+# Xcode build artifacts
+build/
+DerivedData/
+*.xcworkspace/xcshareddata/WorkspaceSettings.xcsettings
+
+# Swift Package Manager
+.swiftpm/
+.build/
+Packages/
+Package.pins
+Package.resolved
+
+# CocoaPods / Carthage (in case they get introduced later)
+Pods/
+Carthage/Build/
+
+# Editor cruft
+*.swp
+*~
+.vscode/
+.idea/

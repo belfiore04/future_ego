@@ -5,6 +5,11 @@ import SwiftData
 struct FutureEgoApp: App {
     @AppStorage("onboarding_completed") private var onboardingCompleted = false
 
+    /// Installs `UNUserNotificationCenterDelegate`. Without this, scheduled
+    /// morning/evening call notifications fire but the app never receives
+    /// the tap/willPresent callbacks — so the overlay never opens.
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+
     // MARK: - SwiftData container
     //
     // Lifted out of the Scene's `.modelContainer(for:)` shorthand so we can
@@ -17,6 +22,7 @@ struct FutureEgoApp: App {
             PersistedScheduleStatus.self,
             PersistedSticker.self,
             PersistedChatMessage.self,
+            PersistedSchedule.self,
         ])
         do {
             let container = try ModelContainer(
@@ -48,17 +54,14 @@ struct FutureEgoApp: App {
             }
             .onAppear {
                 LaunchTrace.mark("root .onAppear")
-                // Defer the notification permission request so the first
-                // frame has time to render before the system dialog appears.
-                // On cold launches this was adding a perceived ~5 seconds
-                // while the user read + dismissed the "允许通知" alert.
-                // The permission is only needed when reminders actually
-                // fire, so a 2s delay is imperceptible and UX-safer.
-                Task { @MainActor in
-                    try? await Task.sleep(for: .seconds(2))
-                    LaunchTrace.mark("ReminderService.requestPermission fire (deferred)")
-                    ReminderService.shared.requestPermission()
-                }
+                // Request notification permission immediately — the 2s defer
+                // we used to have created a window where the AI could be
+                // asked to schedule reminders before permission existed, and
+                // all those notifications would be silently dropped. The
+                // system dialog is async and non-blocking; the first SwiftUI
+                // frame renders underneath it.
+                LaunchTrace.mark("ReminderService.requestPermission fire")
+                ReminderService.shared.requestPermission()
             }
         }
         .modelContainer(Self.sharedModelContainer)

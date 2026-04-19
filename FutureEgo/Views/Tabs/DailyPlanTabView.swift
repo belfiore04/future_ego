@@ -11,7 +11,7 @@ struct DailyPlanTabView: View {
     private var schedule: [ScheduleItem] { scheduleManager.schedule }
 
     private var doneCount: Int {
-        schedule.filter { $0.status == .done }.count
+        schedule.filter { $0.liveStatus == .done }.count
     }
 
     var body: some View {
@@ -71,9 +71,9 @@ private struct TimelineRow: View {
     let appeared: Bool
     var onTap: (() -> Void)?
 
-    private var isDone: Bool { item.status == .done }
-    private var isActive: Bool { item.status == .active }
-    private var isUpcoming: Bool { item.status == .upcoming }
+    private var isDone: Bool { item.liveStatus == .done }
+    private var isActive: Bool { item.liveStatus == .active }
+    private var isUpcoming: Bool { item.liveStatus == .upcoming }
 
     var body: some View {
         let content = rowContent
@@ -185,9 +185,9 @@ private struct StatusBadge: View {
     let item: ScheduleItem
 
     var body: some View {
-        if item.status == .done {
+        if item.liveStatus == .done {
             badgeCapsule(text: "已完成", textColor: Color(hex: "C7C7CC"), bgColor: Color.black.opacity(0.03))
-        } else if item.status == .active {
+        } else if item.liveStatus == .active {
             badgeCapsule(text: "进行中", textColor: Color.brandGreen, bgColor: Color.brandGreen.opacity(0.1))
         } else if let tag = item.tag, let tagColor = item.tagColor {
             badgeCapsule(text: tag, textColor: tagColor, bgColor: tagColor.opacity(0.09))
@@ -330,7 +330,7 @@ private struct EventDetailSheet: View {
             // shared `ActivityCardView` dispatcher. This is the single place
             // (alongside `CurrentEventView`) where the 6 cards are wired up.
             ScrollView(.vertical, showsIndicators: false) {
-                ActivityCardView(activity: item.detail, status: item.status)
+                ActivityCardView(activity: item.detail, status: item.liveStatus)
                     .padding(.horizontal, 24)
                     .padding(.top, 16)
                     .padding(.bottom, 40)

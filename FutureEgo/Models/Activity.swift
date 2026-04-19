@@ -369,6 +369,46 @@ struct ExercisingDetail: Codable, Hashable, Identifiable {
     }
 }
 
+// MARK: - Activity time helpers
+
+extension Activity {
+    /// Canonical "when does this happen" timestamp. Used by ScheduleManager
+    /// to sort items chronologically across days — the older string-based
+    /// sort on `scheduleTime` (HH:MM) collapsed multi-day schedules into one
+    /// day's time-of-day ordering.
+    var sortKey: Date {
+        switch self {
+        case .outing(let d):               return d.arrivalTime
+        case .eating(.delivery(let d)):    return d.mealTime
+        case .eating(.cook(let c)):        return c.startTime
+        case .eating(.eatOut(let e)):      return e.appointmentTime
+        case .concentrating(let c):        return c.startTime
+        case .exercising(let e):           return e.time
+        }
+    }
+
+    /// `(start, end)` window used by `ScheduleItem.liveStatus` to classify
+    /// an item as upcoming / active / done. Types without an explicit end
+    /// fall back to a sensible default duration.
+    var timeWindow: (start: Date, end: Date) {
+        switch self {
+        case .outing(let d):
+            // Treat the event as "active" from arrival to +1h.
+            return (d.arrivalTime, d.arrivalTime.addingTimeInterval(3600))
+        case .eating(.delivery(let d)):
+            return (d.mealTime, d.mealTime.addingTimeInterval(30 * 60))
+        case .eating(.cook(let c)):
+            return (c.startTime, c.startTime.addingTimeInterval(TimeInterval(c.cookDurationMinutes * 60)))
+        case .eating(.eatOut(let e)):
+            return (e.appointmentTime, e.appointmentTime.addingTimeInterval(90 * 60))
+        case .concentrating(let c):
+            return (c.startTime, c.endTime)
+        case .exercising(let e):
+            return (e.time, e.time.addingTimeInterval(60 * 60))
+        }
+    }
+}
+
 // MARK: - ConcentratingDetail elapsed helpers
 
 extension ConcentratingDetail {

@@ -47,7 +47,10 @@ class ScheduledCallService: ObservableObject {
         let content = UNMutableNotificationContent()
         content.title = mode == .morning ? "早安唤醒" : "晚间复盘"
         content.body = mode == .morning ? "Future Ego 来电唤醒你" : "Future Ego 想和你聊聊今天"
-        content.sound = UNNotificationSound(named: UNNotificationSoundName("ringtone.caf"))
+        // Fall back to the default system notification sound. A custom
+        // ringtone.caf was referenced here before but was never bundled —
+        // iOS silently goes mute when a named sound can't be resolved.
+        content.sound = .default
         content.userInfo = ["call_mode": mode.rawValue]
 
         var dateComponents = DateComponents()
@@ -105,7 +108,10 @@ class ScheduledCallService: ObservableObject {
         let content = UNMutableNotificationContent()
         content.title = "[Debug] \(mode == .morning ? "早安唤醒" : "晚间复盘")"
         content.body = "\(Int(seconds))s 后触发的调试通知"
-        content.sound = UNNotificationSound(named: UNNotificationSoundName("ringtone.caf"))
+        // Fall back to the default system notification sound. A custom
+        // ringtone.caf was referenced here before but was never bundled —
+        // iOS silently goes mute when a named sound can't be resolved.
+        content.sound = .default
         content.userInfo = ["call_mode": mode.rawValue, "debug": true]
 
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: max(1, seconds), repeats: false)

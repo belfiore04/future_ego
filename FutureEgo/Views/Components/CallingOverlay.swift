@@ -6,9 +6,19 @@ struct ChatMessage: Identifiable {
     let id: Int
     let role: ChatRole
     let text: String
+    /// Only populated when `role == .scheduleCard` — the newly-added schedule
+    /// item to render as a confirmation card inline in the chat.
+    let scheduleItem: ScheduleItem?
+
+    init(id: Int, role: ChatRole, text: String, scheduleItem: ScheduleItem? = nil) {
+        self.id = id
+        self.role = role
+        self.text = text
+        self.scheduleItem = scheduleItem
+    }
 
     enum ChatRole {
-        case user, ai
+        case user, ai, scheduleCard
     }
 }
 
@@ -31,6 +41,7 @@ struct CallingOverlay: View {
     @FocusState private var isInputFocused: Bool
 
     @StateObject private var voice = VoiceService.shared
+    @ObservedObject private var scheduleManager = ScheduleManager.shared
 
     /// Timer publisher that fires every second for the call duration counter.
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
@@ -143,6 +154,21 @@ struct CallingOverlay: View {
                     }
                 }
             }
+            .onChange(of: scheduleManager.aiAddedItemsThisCall.count) { oldCount, newCount in
+                guard newCount > oldCount else { return }
+                let newItems = Array(scheduleManager.aiAddedItemsThisCall[oldCount..<newCount])
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                    for item in newItems {
+                        msgIdCounter += 1
+                        messages.append(ChatMessage(
+                            id: msgIdCounter,
+                            role: .scheduleCard,
+                            text: "",
+                            scheduleItem: item
+                        ))
+                    }
+                }
+            }
         }
     }
 
@@ -176,23 +202,98 @@ struct CallingOverlay: View {
 
     @ViewBuilder
     private func chatBubble(_ msg: ChatMessage) -> some View {
-        HStack {
-            if msg.role == .user { Spacer(minLength: 50) }
+        if msg.role == .scheduleCard, let item = msg.scheduleItem {
+            scheduleCardBubble(item)
+        } else {
+            HStack {
+                if msg.role == .user { Spacer(minLength: 50) }
 
-            Text(msg.text)
-                .font(.system(size: 17))
-                .lineSpacing(4)
-                .foregroundColor(msg.role == .user ? .white : .white.opacity(0.9))
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                .background(
-                    msg.role == .user
-                        ? AnyShapeStyle(accentGreen)
-                        : AnyShapeStyle(Color.white.opacity(0.1))
-                )
-                .clipShape(BubbleShape(isUser: msg.role == .user))
+                Text(msg.text)
+                    .font(.system(size: 17))
+                    .lineSpacing(4)
+                    .foregroundColor(msg.role == .user ? .white : .white.opacity(0.9))
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .background(
+                        msg.role == .user
+                            ? AnyShapeStyle(accentGreen)
+                            : AnyShapeStyle(Color.white.opacity(0.1))
+                    )
+                    .clipShape(BubbleShape(isUser: msg.role == .user))
 
-            if msg.role == .ai { Spacer(minLength: 50) }
+                if msg.role == .ai { Spacer(minLength: 50) }
+            }
+        }
+    }
+
+    // MARK: - Schedule Card Bubble
+
+    /// Renders a compact confirmation card for a schedule item the AI just
+    /// added via a tool call. Shown inline in the chat area so the user gets
+    /// immediate visual feedback during a voice call.
+    private func scheduleCardBubble(_ item: ScheduleItem) -> some View {
+        let meta = CardMeta.from(item.detail)
+        return HStack {
+            VStack(alignment: .leading, spacing: 8) {
+                // Header: icon + tag + "已添加"
+                HStack(spacing: 8) {
+                    Image(systemName: meta.icon)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(meta.color)
+                        .frame(width: 26, height: 26)
+                        .background(Circle().fill(meta.color.opacity(0.18)))
+
+                    Text(meta.tag)
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(meta.color)
+
+                    Spacer()
+
+                    Text("已添加")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(.white.opacity(0.5))
+                }
+
+                // Title
+                Text(item.title.isEmpty ? item.detail.displayTitle : item.title)
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundColor(.white)
+                    .lineLimit(2)
+
+                // Time
+                Text(item.scheduleTime)
+                    .font(.system(size: 14))
+                    .foregroundColor(.white.opacity(0.7))
+
+                // Type-specific details
+                if !meta.details.isEmpty {
+                    VStack(alignment: .leading, spacing: 4) {
+                        ForEach(meta.details, id: \.self) { line in
+                            HStack(alignment: .top, spacing: 6) {
+                                Text("·")
+                                    .foregroundColor(.white.opacity(0.5))
+                                Text(line)
+                                    .font(.system(size: 13))
+                                    .foregroundColor(.white.opacity(0.75))
+                                    .lineLimit(2)
+                            }
+                        }
+                    }
+                    .padding(.top, 2)
+                }
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color.white.opacity(0.08))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(meta.color.opacity(0.35), lineWidth: 1)
+                    )
+            )
+
+            Spacer(minLength: 30)
         }
     }
 
@@ -546,6 +647,90 @@ struct RoundedCornerShape: Shape {
         path.closeSubpath()
 
         return path
+    }
+}
+
+// MARK: - Schedule Card Metadata
+
+/// Per-activity presentation metadata used by `scheduleCardBubble`.
+/// Keeps the card renderer readable by computing icon/color/tag and a short
+/// list of human-readable detail lines up front.
+private struct CardMeta {
+    let icon: String
+    let color: Color
+    let tag: String
+    let details: [String]
+
+    static func from(_ activity: Activity) -> CardMeta {
+        switch activity {
+        case .outing(let d):
+            var lines: [String] = []
+            if !d.destination.isEmpty { lines.append("目的地：\(d.destination)") }
+            if !d.itemsToBring.isEmpty { lines.append("带：\(d.itemsToBring.joined(separator: "、"))") }
+            return CardMeta(icon: "location.fill", color: .blue, tag: "出行", details: lines)
+
+        case .eating(.delivery(let d)):
+            var lines: [String] = []
+            if !d.shopName.isEmpty { lines.append("店铺：\(d.shopName)") }
+            if !d.orderItems.isEmpty {
+                let names = d.orderItems.prefix(3).map { "\($0.name)×\($0.quantity)" }
+                lines.append(names.joined(separator: "、"))
+            }
+            lines.append("约 \(d.estimatedDeliveryMinutes) 分钟送达")
+            if d.estimatedTotalPrice > 0 {
+                let priceNum = NSDecimalNumber(decimal: d.estimatedTotalPrice)
+                let nf = NumberFormatter()
+                nf.numberStyle = .decimal
+                nf.maximumFractionDigits = 0
+                let priceStr = nf.string(from: priceNum) ?? "\(priceNum.intValue)"
+                lines.append("预估 ¥\(priceStr)")
+            }
+            return CardMeta(icon: "bag.fill", color: .orange, tag: "外卖", details: lines)
+
+        case .eating(.cook(let d)):
+            var lines: [String] = []
+            let names = d.dishes.map { $0.name }.filter { !$0.isEmpty }
+            if !names.isEmpty { lines.append("菜品：\(names.joined(separator: "、"))") }
+            lines.append("预计 \(d.cookDurationMinutes) 分钟")
+            if !d.ingredients.isEmpty {
+                let ing = d.ingredients.prefix(4).map { $0.name }.joined(separator: "、")
+                lines.append("食材：\(ing)\(d.ingredients.count > 4 ? "…" : "")")
+            }
+            return CardMeta(icon: "fork.knife.circle.fill", color: .yellow, tag: "做饭", details: lines)
+
+        case .eating(.eatOut(let d)):
+            var lines: [String] = []
+            if !d.restaurantName.isEmpty { lines.append("餐厅：\(d.restaurantName)") }
+            if !d.restaurantType.isEmpty { lines.append("类型：\(d.restaurantType)") }
+            if !d.companion.isEmpty { lines.append("和：\(d.companion)") }
+            if !d.recommendedDishes.isEmpty {
+                lines.append("推荐：\(d.recommendedDishes.prefix(3).joined(separator: "、"))")
+            }
+            return CardMeta(icon: "fork.knife", color: .pink, tag: "外食", details: lines)
+
+        case .concentrating(let d):
+            var lines: [String] = []
+            if let dl = d.deadline {
+                let df = DateFormatter()
+                df.dateFormat = "yyyy-MM-dd"
+                lines.append("DDL：\(df.string(from: dl))")
+            }
+            if !d.steps.isEmpty {
+                lines.append(contentsOf: d.steps.prefix(3))
+            }
+            return CardMeta(icon: "brain.head.profile", color: .purple, tag: d.isAISuggested ? "专注 · AI 建议" : "专注", details: lines)
+
+        case .exercising(let d):
+            var lines: [String] = []
+            if !d.venueName.isEmpty { lines.append("场地：\(d.venueName)") }
+            if !d.aiSuggestedEquipment.isEmpty {
+                lines.append("AI 建议带：\(d.aiSuggestedEquipment.joined(separator: "、"))")
+            }
+            if !d.userEquipment.isEmpty {
+                lines.append("已备：\(d.userEquipment.joined(separator: "、"))")
+            }
+            return CardMeta(icon: "figure.run", color: .green, tag: "运动", details: lines)
+        }
     }
 }
 

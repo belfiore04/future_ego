@@ -15,10 +15,75 @@ class PersistenceService: ObservableObject {
             PersistedScheduleStatus.self,
             PersistedSticker.self,
             PersistedChatMessage.self,
+            PersistedSchedule.self,
         ])
         let config = ModelConfiguration(isStoredInMemoryOnly: false)
         container = try! ModelContainer(for: schema, configurations: config)
         context = container.mainContext
+    }
+
+    // MARK: - Schedule (full items)
+
+    /// JSON coders shared by the schedule encode/decode paths.
+    private static let scheduleEncoder = JSONEncoder()
+    private static let scheduleDecoder = JSONDecoder()
+
+    /// Load every persisted schedule item, decoded back into ScheduleItem.
+    /// Undecodable rows are skipped (they'd come from a stale schema), so a
+    /// bad migration doesn't wipe the list — just elides the bad entries.
+    func loadAllSchedules() -> [ScheduleItem] {
+        let descriptor = FetchDescriptor<PersistedSchedule>(sortBy: [SortDescriptor(\.createdAt)])
+        guard let rows = try? context.fetch(descriptor) else { return [] }
+        return rows.compactMap { row -> ScheduleItem? in
+            guard let detail = try? Self.scheduleDecoder.decode(Activity.self, from: row.detailBlob) else {
+                return nil
+            }
+            let status = EventStatus(rawValue: row.statusRaw) ?? .upcoming
+            return ScheduleItem(
+                id: row.id,
+                scheduleTime: row.scheduleTime,
+                title: row.title,
+                status: status,
+                tag: nil,
+                tagColor: nil,
+                detail: detail
+            )
+        }
+    }
+
+    /// Insert or update the persisted row for a ScheduleItem. Called after
+    /// every ScheduleManager mutation so the on-disk state always mirrors
+    /// the in-memory array.
+    func upsertSchedule(_ item: ScheduleItem) {
+        guard let blob = try? Self.scheduleEncoder.encode(item.detail) else { return }
+        let id = item.id
+        let predicate = #Predicate<PersistedSchedule> { $0.id == id }
+        let descriptor = FetchDescriptor(predicate: predicate)
+        if let existing = try? context.fetch(descriptor).first {
+            existing.scheduleTime = item.scheduleTime
+            existing.title = item.title
+            existing.statusRaw = item.status.rawValue
+            existing.detailBlob = blob
+        } else {
+            let row = PersistedSchedule(
+                id: item.id,
+                scheduleTime: item.scheduleTime,
+                title: item.title,
+                statusRaw: item.status.rawValue,
+                detailBlob: blob
+            )
+            context.insert(row)
+        }
+        try? context.save()
+    }
+
+    func deleteSchedule(id: UUID) {
+        let predicate = #Predicate<PersistedSchedule> { $0.id == id }
+        let descriptor = FetchDescriptor(predicate: predicate)
+        if let row = try? context.fetch(descriptor).first {
+            context.delete(row)
+            try? context.save()
+        }
     }
 
     // MARK: - Schedule Status

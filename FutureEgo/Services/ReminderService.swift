@@ -1,34 +1,42 @@
 import UserNotifications
 import MapKit
 import Foundation
+import os
+
+private let log = Logger(subsystem: "com.futureego.reminder", category: "ReminderService")
 
 @MainActor
 class ReminderService: ObservableObject {
     static let shared = ReminderService()
 
-    // MARK: - Pending Reminders
-    //
-    // Call reminders are dispatched via in-process DispatchWorkItem timers
-    // (CallKit is simulator-unfriendly, and the app may not be alive at
-    // fire-time anyway — this is best-effort). We keep them keyed by their
-    // notification identifier so cancellation can reach them.
-    private var pendingCallReminders: [String: DispatchWorkItem] = [:]
-
     // Lookup from schedule UUID → the two notification identifiers we
     // registered for that outing. Used by `cancelOutingReminders` to map
-    // a ScheduleItem back to the notification requests + work items it
-    // owns without having to know the title.
+    // a ScheduleItem back to the notification requests it owns without
+    // having to know the title.
     private var outingReminderIdentifiers: [UUID: OutingReminderIdentifiers] = [:]
 
     private struct OutingReminderIdentifiers {
-        let notifyIdentifier: String   // the -15 min UNNotification id
-        let callIdentifier: String     // the -10 min DispatchWorkItem id
+        let notifyIdentifier: String   // the -15 min "准备出发" UNNotification id
+        let callIdentifier: String     // the -10 min time-sensitive "该出发了" UNNotification id
     }
+
+    // Payload key AppDelegate reads on tap to route into CallKit.
+    static let outingCallReasonKey = "outing_call_reason"
+
+    // Eat-out events don't need ETA math, so they just register a single
+    // "准备出发" reminder. Tracked separately so cancellation is O(1).
+    private var eatOutReminderIdentifiers: [UUID: String] = [:]
 
     // MARK: - Request Notification Permission
 
     func requestPermission() {
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { _, _ in }
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
+            if let error {
+                log.error("requestPermission failed: \(error.localizedDescription, privacy: .public)")
+            } else {
+                log.info("requestPermission granted=\(granted)")
+            }
+        }
     }
 
     // MARK: - Public API (Outing)
@@ -97,7 +105,7 @@ class ReminderService: ObservableObject {
             identifier: notifyIdentifier
         )
 
-        scheduleCallReminder(
+        scheduleCallReminderNotification(
             reason: "该出发了：\(title)",
             at: callTime,
             identifier: callIdentifier
@@ -113,37 +121,43 @@ class ReminderService: ObservableObject {
     /// registered for that id.
     func cancelOutingReminders(scheduleId: UUID) {
         guard let ids = outingReminderIdentifiers.removeValue(forKey: scheduleId) else { return }
-
         UNUserNotificationCenter.current().removePendingNotificationRequests(
-            withIdentifiers: [ids.notifyIdentifier]
+            withIdentifiers: [ids.notifyIdentifier, ids.callIdentifier]
         )
-
-        if let workItem = pendingCallReminders.removeValue(forKey: ids.callIdentifier) {
-            workItem.cancel()
-        }
     }
 
-    // MARK: - Deprecated Legacy API
-    //
-    // The old `.location` event type used a title+address+eventTime call.
-    // Task-4's ScheduleManager rewrite should use `scheduleOutingReminders`
-    // directly, but we keep this shim so we don't break compilation mid-
-    // merge. It intentionally does nothing more than log — the old code
-    // path wasn't schedule-id-keyed and has no safe route onto the new
-    // cancellation machinery.
+    // MARK: - Public API (Eat-out)
 
-    @available(*, deprecated, message: "Use scheduleOutingReminders(for:scheduleId:) — this legacy entry point no longer schedules anything.")
-    func scheduleSmartReminders(for title: String, at address: String, eventTime: Date) {
-        // Intentional no-op. Kept only for source-compatibility with the
-        // pre-refactor ScheduleManager until task-4 lands its rewrite.
-        print("[ReminderService] scheduleSmartReminders is deprecated; title=\(title)")
+    /// Schedule a single "准备出发" notification 30 minutes before the
+    /// appointment. Eat-out doesn't run the full ETA pipeline — at dinner
+    /// time users already know how long it takes to get to their regular
+    /// haunts, and the main value is the nudge, not the minute-precise lead.
+    func scheduleEatOutReminders(for eatOut: EatOutDetail, scheduleId: UUID) {
+        cancelEatOutReminders(scheduleId: scheduleId)
+
+        let title = eatOut.restaurantName.isEmpty ? "外食" : eatOut.restaurantName
+        let reminderTime = eatOut.appointmentTime.addingTimeInterval(-30 * 60)
+        let identifier = "eatout-\(scheduleId.uuidString)-notify"
+
+        scheduleNotification(
+            title: "准备出发",
+            body: "30 分钟后「\(title)」见。",
+            at: reminderTime,
+            identifier: identifier
+        )
+        eatOutReminderIdentifiers[scheduleId] = identifier
     }
 
-    @available(*, deprecated, message: "Use cancelOutingReminders(scheduleId:) — this legacy entry point no longer cancels anything.")
-    func cancelReminders(for title: String) {
-        // Intentional no-op. Kept only for source-compatibility with the
-        // pre-refactor ScheduleManager until task-4 lands its rewrite.
-        print("[ReminderService] cancelReminders is deprecated; title=\(title)")
+    func cancelEatOutReminders(scheduleId: UUID) {
+        guard let id = eatOutReminderIdentifiers.removeValue(forKey: scheduleId) else { return }
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [id])
+    }
+
+    /// Aggregate cancel — used by `ScheduleManager.deleteSchedule` which
+    /// doesn't know which reminder kind was registered for a given item.
+    func cancelReminders(scheduleId: UUID) {
+        cancelOutingReminders(scheduleId: scheduleId)
+        cancelEatOutReminders(scheduleId: scheduleId)
     }
 
     // MARK: - Coordinate Resolution
@@ -221,38 +235,79 @@ class ReminderService: ObservableObject {
     // MARK: - Local Notification
 
     private func scheduleNotification(title: String, body: String, at date: Date, identifier: String) {
-        // Guard against scheduling a trigger in the past — UN would
-        // silently drop it, and the user would blame us.
-        guard date.timeIntervalSinceNow > 0 else { return }
+        let interval = date.timeIntervalSinceNow
+        // UN silently drops any trigger whose fire time is already past.
+        guard interval > 0 else {
+            log.warning("scheduleNotification dropped (past) id=\(identifier, privacy: .public) interval=\(interval)")
+            return
+        }
 
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body
         content.sound = .default
 
-        let components = Calendar.current.dateComponents(
-            [.year, .month, .day, .hour, .minute],
-            from: date
-        )
-        let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+        // Time-interval trigger instead of calendar trigger on purpose:
+        // UNCalendarNotificationTrigger matches only year/month/day/hour/minute,
+        // which silently truncates seconds. A trigger registered at 10:30:45
+        // with dateMatching ymd+hm resolves to 10:30:00, which is already in
+        // the past, and iOS drops it.
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: interval, repeats: false)
 
         let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
-        UNUserNotificationCenter.current().add(request)
-    }
-
-    // MARK: - Call Reminder (triggers CallKit incoming call)
-
-    private func scheduleCallReminder(reason: String, at date: Date, identifier: String) {
-        let interval = date.timeIntervalSinceNow
-        guard interval > 0 else { return }
-
-        let workItem = DispatchWorkItem { [weak self] in
-            CallService.shared.reportIncomingCall(reason: reason)
-            Task { @MainActor in
-                self?.pendingCallReminders.removeValue(forKey: identifier)
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error {
+                log.error("add failed id=\(identifier, privacy: .public) err=\(error.localizedDescription, privacy: .public)")
+            } else {
+                log.info("add OK id=\(identifier, privacy: .public) fires in \(Int(interval))s")
             }
         }
-        pendingCallReminders[identifier] = workItem
-        DispatchQueue.main.asyncAfter(deadline: .now() + interval, execute: workItem)
+    }
+
+    // MARK: - Call Reminder (time-sensitive notification → tap opens CallKit)
+    //
+    // Earlier versions of this method scheduled an in-process DispatchWorkItem
+    // to fire `CallService.reportIncomingCall` at T-10min, hoping to surface
+    // a CallKit-style incoming call even when the app was backgrounded. That
+    // plan doesn't survive contact with iOS: the system suspends the app a
+    // few seconds after backgrounding and the WorkItem's closure never runs.
+    // The only supported path to wake a backgrounded app into CallKit is a
+    // PushKit VoIP push from a server — which we don't have yet.
+    //
+    // Fallback strategy (Path A): register the T-10min reminder as a
+    // **time-sensitive** local notification. It bypasses Focus mode, plays
+    // the default sound, and when the user taps it, `AppDelegate.didReceive`
+    // routes the `outing_call_reason` userInfo key back into
+    // `CallService.reportIncomingCall`. The user has to tap, but at least
+    // something surfaces reliably.
+    private func scheduleCallReminderNotification(reason: String, at date: Date, identifier: String) {
+        let interval = date.timeIntervalSinceNow
+        guard interval > 0 else {
+            log.warning("scheduleCallReminderNotification dropped (past) id=\(identifier, privacy: .public) interval=\(interval)")
+            return
+        }
+
+        let content = UNMutableNotificationContent()
+        content.title = "该出发了"
+        content.body = reason
+        content.sound = .default
+        // Time-sensitive bypasses Focus/Do Not Disturb. Requires the
+        // `com.apple.developer.usernotifications.time-sensitive` entitlement
+        // (see FutureEgo.entitlements). Without the entitlement iOS silently
+        // downgrades to .active — the notification still shows, just isn't
+        // prioritized.
+        content.interruptionLevel = .timeSensitive
+        // AppDelegate reads this on tap to start a CallKit incoming call.
+        content.userInfo = [Self.outingCallReasonKey: reason]
+
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: interval, repeats: false)
+        let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error {
+                log.error("call-reminder add failed id=\(identifier, privacy: .public) err=\(error.localizedDescription, privacy: .public)")
+            } else {
+                log.info("call-reminder add OK id=\(identifier, privacy: .public) fires in \(Int(interval))s")
+            }
+        }
     }
 }

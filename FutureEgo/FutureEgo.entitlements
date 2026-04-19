@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!--
+      Lets UNNotificationInterruptionLevel.timeSensitive actually bypass
+      Focus / Do Not Disturb. Used by ReminderService.scheduleCallReminderNotification
+      so the "该出发了" reminder still surfaces when the user is in a Focus.
+      Free entitlement — no Apple review needed; just has to be present in
+      the signed build.
+    -->
+    <key>com.apple.developer.usernotifications.time-sensitive</key>
+    <true/>
+</dict>
+</plist>

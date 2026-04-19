@@ -29,25 +29,20 @@ struct DetailPageShell<InfoSection: View, InteractiveSection: View>: View {
     let interactiveSection: () -> InteractiveSection
 
     @State private var isFolded = true
-    @State private var dragOffset: CGFloat = 0
 
-    /// Bumped once when the drag crosses the commit threshold in a direction
-    /// that would actually flip `isFolded`. Drives `.sensoryFeedback`.
+    /// Bumped once per state flip so `.sensoryFeedback` can fire. Wraps
+    /// at overflow; absolute value irrelevant, only change matters.
     @State private var hapticTick: Int = 0
-    /// Direction the current drag last committed a haptic for: -1 = fold,
-    /// +1 = unfold, 0 = neutral. Prevents continuous buzzing while the
-    /// finger stays past the threshold.
-    @State private var hapticDirection: Int = 0
+    /// Direction the current ongoing gesture has already committed in this
+    /// pass: -1 = committed to fold, +1 = committed to unfold, 0 = no
+    /// commit yet. Reset on gesture end. Allows the user to reverse
+    /// direction within the same gesture (drag down then up → unfold then
+    /// fold) while preventing repeated triggers from the same direction.
+    @State private var committedDirection: Int = 0
 
-    /// How much weight the drag "feels like" inside the valid range.
-    /// 1.0 = finger and card move together; lower = card lags behind,
-    /// feels heavier. 0.85 gives a subtle pull-back without feeling laggy.
-    private let dragFollowRatio: CGFloat = 0.85
-    /// Rubber-band stiffness past the range. Smaller = resistance kicks in
-    /// sooner. 90 roughly matches iOS scroll overscroll.
-    private let rubberBandStiffness: CGFloat = 90
-    /// How far the finger has to travel from neutral before we fire the
-    /// "打火" haptic. Matches the commit thresholds in onEnded.
+    /// How far the finger has to travel from the gesture's starting point
+    /// before we flip the state and fire a haptic. Low = hair-trigger;
+    /// high = deliberate swipe.
     private let commitThreshold: CGFloat = 40
 
     init(
@@ -83,12 +78,10 @@ struct DetailPageShell<InfoSection: View, InteractiveSection: View>: View {
             let backH = geo.size.height * backCardRatio
             let unfoldedY = backH * unfoldedRatio
             let foldedY = backH * foldedRatio
-            let target = isFolded ? foldedY : unfoldedY
-            // Apply a < 1.0 follow ratio inside the range so the card feels
-            // slightly heavier than the finger, then rubber-band any overflow
-            // past the fold / unfold stops.
-            let rawY = target + dragOffset * dragFollowRatio
-            let frontY = rubberBand(rawY, lower: foldedY, upper: unfoldedY)
+            // Two-state toggle: the card is pinned to exactly one of the two
+            // positions at any time. The drag gesture only flips state, it
+            // never offsets the card mid-drag.
+            let frontY = isFolded ? foldedY : unfoldedY
 
             ZStack(alignment: .top) {
                 Color.white.ignoresSafeArea()
@@ -144,47 +137,44 @@ struct DetailPageShell<InfoSection: View, InteractiveSection: View>: View {
                 .shadow(color: .black.opacity(0.08), radius: 12, y: -2)
                 .offset(y: frontY)
                 .gesture(
-                    DragGesture()
+                    DragGesture(minimumDistance: 10)
                         .onChanged { value in
-                            dragOffset = value.translation.height
+                            // Two-state snap. We don't move the card with
+                            // the finger; instead, the moment net translation
+                            // crosses ±commitThreshold in a direction that
+                            // actually flips the current state, we animate
+                            // the card to the new state and buzz once.
+                            //
+                            // committedDirection prevents the same direction
+                            // from firing repeatedly while the finger stays
+                            // past the threshold. Reversing direction
+                            // (e.g. swipe down past threshold → without
+                            // lifting, swipe back up past threshold) is
+                            // allowed and triggers the opposite flip.
+                            let h = value.translation.height
+                            let dir: Int
+                            if h < -commitThreshold { dir = -1 }
+                            else if h > commitThreshold { dir = 1 }
+                            else { dir = 0 }
 
-                            // Fire one rigid "打火" click the moment the
-                            // finger crosses the commit threshold in a
-                            // direction that would actually change state.
-                            // Guarded by hapticDirection so we only buzz on
-                            // the edge, not every frame past the threshold.
-                            let raw = value.translation.height
-                            let newDir: Int
-                            if raw < -commitThreshold { newDir = -1 }
-                            else if raw > commitThreshold { newDir = 1 }
-                            else { newDir = 0 }
-
-                            if newDir != hapticDirection {
-                                let wouldChange = (newDir == -1 && !isFolded)
-                                               || (newDir == 1 && isFolded)
-                                if wouldChange {
-                                    hapticTick &+= 1
-                                }
-                                hapticDirection = newDir
+                            guard dir != 0, dir != committedDirection else {
+                                if dir == 0 { committedDirection = 0 }
+                                return
                             }
+
+                            let wouldChange = (dir == -1 && !isFolded)
+                                           || (dir == 1 && isFolded)
+                            if wouldChange {
+                                withAnimation(.spring(response: 0.35,
+                                                      dampingFraction: 0.78)) {
+                                    isFolded = (dir == -1)
+                                }
+                                hapticTick &+= 1
+                            }
+                            committedDirection = dir
                         }
-                        .onEnded { value in
-                            let velocity = value.predictedEndTranslation.height
-                                - value.translation.height
-                            withAnimation(.spring(response: 0.4,
-                                                  dampingFraction: 0.82)) {
-                                if value.translation.height < -40
-                                    || velocity < -200
-                                {
-                                    isFolded = true
-                                } else if value.translation.height > 40
-                                    || velocity > 200
-                                {
-                                    isFolded = false
-                                }
-                                dragOffset = 0
-                            }
-                            hapticDirection = 0
+                        .onEnded { _ in
+                            committedDirection = 0
                         }
                 )
                 .sensoryFeedback(.impact(flexibility: .rigid, intensity: 0.9),
@@ -193,22 +183,6 @@ struct DetailPageShell<InfoSection: View, InteractiveSection: View>: View {
             .padding(.top,60)
 
         }.padding(.bottom,100)
-    }
-
-    /// Classic iOS rubber-band: values inside `[lower, upper]` pass through;
-    /// values outside are compressed asymptotically so the finger can keep
-    /// moving but the card barely follows. `stiffness` controls how fast the
-    /// resistance ramps — smaller = more resistance sooner.
-    private func rubberBand(_ value: CGFloat, lower: CGFloat, upper: CGFloat) -> CGFloat {
-        if value < lower {
-            let over = lower - value
-            return lower - over / (1 + over / rubberBandStiffness)
-        }
-        if value > upper {
-            let over = value - upper
-            return upper + over / (1 + over / rubberBandStiffness)
-        }
-        return value
     }
 }
 

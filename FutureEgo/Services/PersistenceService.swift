@@ -113,6 +113,31 @@ class PersistenceService: ObservableObject {
         return (try? context.fetch(descriptor)) ?? []
     }
 
+    /// Stickers created on the current calendar day, oldest first.
+    func loadTodayStickers() -> [PersistedSticker] {
+        let all = loadStickers()
+        let cal = Calendar.current
+        return all.filter { cal.isDateInToday($0.createdAt) }
+    }
+
+    /// Delete all stickers (file + row) whose `createdAt` is before the
+    /// start of today. Called on app foreground / time-change to enforce
+    /// the daily reset rule.
+    func purgeStickersBeforeToday() {
+        let cal = Calendar.current
+        let todayStart = cal.startOfDay(for: .now)
+        let descriptor = FetchDescriptor<PersistedSticker>(
+            predicate: #Predicate { $0.createdAt < todayStart }
+        )
+        guard let stale = try? context.fetch(descriptor), !stale.isEmpty else { return }
+        for row in stale {
+            let fileURL = Self.stickersDirectory.appendingPathComponent(row.imageFileName)
+            try? FileManager.default.removeItem(at: fileURL)
+            context.delete(row)
+        }
+        try? context.save()
+    }
+
     func saveSticker(image: UIImage) -> PersistedSticker? {
         guard let data = image.pngData() else { return nil }
         let fileName = UUID().uuidString + ".png"

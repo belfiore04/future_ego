@@ -103,7 +103,17 @@ struct DetailPageShell<InfoSection: View, InteractiveSection: View>: View {
                         .padding(.trailing, backH * 0.1)
                         .padding(.top,20)
                     }
-                    
+                    .overlay(alignment: .topLeading) {
+                        // Sticker pile lives in the left region of the
+                        // back card. Front card is rendered later in
+                        // this same ZStack and therefore covers the
+                        // pile when it slides down (unfold).
+                        StickerBadgeStack(size: backH * 0.55)
+                            .padding(.leading, backH * 0.1)
+                            .padding(.top, 20)
+                            .allowsHitTesting(false)
+                    }
+
 
                 // ── Front card ──
                 VStack(

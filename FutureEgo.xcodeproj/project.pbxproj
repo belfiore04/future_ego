@@ -73,13 +73,15 @@
 		E376F109A3556BD906E8DED6 /* TTSWebSocketService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71BB8EB5023EEC29C1ADFC11 /* TTSWebSocketService.swift */; };
 		E5EA22F915BF739BADFFCF05 /* HugeTimeDisplay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 974B7FFFF1FE709DD74F7812 /* HugeTimeDisplay.swift */; };
 		E740A136DF847BEEEC6D6567 /* ReviewModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3837666F32262939EAA09F3 /* ReviewModels.swift */; };
-		E76BFAE38BF79EA96C391231 /* StickerOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 352B247C7E55347B35F0DAB2 /* StickerOverlay.swift */; };
 		E9B583F305E2FF51019362EE /* ImageSegmentationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E28B0CA901DCD5F28E922389 /* ImageSegmentationService.swift */; };
 		EE6CD210B791C6E862913503 /* CurrentEventView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 564B54F9A60D211195C7177F /* CurrentEventView.swift */; };
 		F00A8079912BA4619E62A4C5 /* CallingOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 279802B769D13BAE496A917E /* CallingOverlay.swift */; };
 		F03CF54D9613408EDBB439BF /* Activity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1689CE1B4EB4024F34BD7E1F /* Activity.swift */; };
 		F89EA110394B556A110CCEDE /* CheckItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 444CFCBE6A5431523A342997 /* CheckItem.swift */; };
-/* End PBXBuildFile section */
+		701E16912439675A401B4C50 /* StickerStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC45C5B6C7F38010F194B072 /* StickerStore.swift */; };
+		95F3CD6127028085AB396CBC /* StickerEditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A11DB12ED193E35487D43E /* StickerEditView.swift */; };
+		4622156BBA2242E4D0A5581B /* StickerBadgeStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC121DCE5CA9B908D879E4E7 /* StickerBadgeStack.swift */; };
+	/* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		0B3FC2393AAB6E81BA6B0B75 /* HeroIllustration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeroIllustration.swift; sourceTree = "<group>"; };
@@ -97,7 +99,6 @@
 		2654E4307B1834F4FA2293C6 /* InstrumentSans.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = InstrumentSans.ttf; sourceTree = "<group>"; };
 		279802B769D13BAE496A917E /* CallingOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallingOverlay.swift; sourceTree = "<group>"; };
 		2D65A5DCB13B347A04F26F8D /* ReminderService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReminderService.swift; sourceTree = "<group>"; };
-		352B247C7E55347B35F0DAB2 /* StickerOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StickerOverlay.swift; sourceTree = "<group>"; };
 		3C72E51EB61219FC7D8D50C6 /* ScheduleManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleManager.swift; sourceTree = "<group>"; };
 		3D1050C5B00B995CF1F6710C /* CookCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CookCard.swift; sourceTree = "<group>"; };
 		3D5C2F4A6C1A529D9D95D190 /* MemoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryView.swift; sourceTree = "<group>"; };
@@ -156,7 +157,10 @@
 		EDB1400107BEC35F4E590BD9 /* FutureEgoApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FutureEgoApp.swift; sourceTree = "<group>"; };
 		FB5E86467264A80D9D5A0FEF /* CallService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallService.swift; sourceTree = "<group>"; };
 		FFDB162A70E8C6B9E8D9DAE1 /* ProgressRing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressRing.swift; sourceTree = "<group>"; };
-/* End PBXFileReference section */
+		FC45C5B6C7F38010F194B072 /* StickerStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StickerStore.swift; sourceTree = "<group>"; };
+		A5A11DB12ED193E35487D43E /* StickerEditView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StickerEditView.swift; sourceTree = "<group>"; };
+		FC121DCE5CA9B908D879E4E7 /* StickerBadgeStack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StickerBadgeStack.swift; sourceTree = "<group>"; };
+	/* End PBXFileReference section */
 
 /* Begin PBXGroup section */
 		07F380A1D6B1111E27871FA8 /* Cards */ = {
@@ -208,10 +212,11 @@
 				91F9CEF1B2E84020144ACDF5 /* ReviewCharts.swift */,
 				10FA0B2A5902ECBD21D9ABD5 /* ShareSheetView.swift */,
 				7EFDF5037194BF1D651B2D7A /* StepFlow.swift */,
-				352B247C7E55347B35F0DAB2 /* StickerOverlay.swift */,
 				4EFF8303DBCCE4C47274E0BE /* SwipeableCard.swift */,
 				07F380A1D6B1111E27871FA8 /* Cards */,
 				9431CD8BE751A535A3B0184C /* DetailPages */,
+				A5A11DB12ED193E35487D43E /* StickerEditView.swift */,
+				FC121DCE5CA9B908D879E4E7 /* StickerBadgeStack.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -268,6 +273,7 @@
 				7895D5175B72C066682A4ADE /* UserLocationStore.swift */,
 				868BC0C59ADB5995747F7E90 /* VoiceService.swift */,
 				E43DD04987A56D9CF9C92F36 /* WeatherService.swift */,
+				FC45C5B6C7F38010F194B072 /* StickerStore.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -501,7 +507,9 @@
 				800327298DFBA9F29033C552 /* ShoppingListLayout.swift in Sources */,
 				AB54C61EE1D39F82D4373F4A /* StepFlow.swift in Sources */,
 				2CE19845B122A94DD0E4F7F5 /* StepListLayout.swift in Sources */,
-				E76BFAE38BF79EA96C391231 /* StickerOverlay.swift in Sources */,
+				4622156BBA2242E4D0A5581B /* StickerBadgeStack.swift in Sources */,
+				95F3CD6127028085AB396CBC /* StickerEditView.swift in Sources */,
+				701E16912439675A401B4C50 /* StickerStore.swift in Sources */,
 				16E8071FFFE952C2A26D8769 /* SwipeableCard.swift in Sources */,
 				E376F109A3556BD906E8DED6 /* TTSWebSocketService.swift in Sources */,
 				7CF52D408F26167D2711C60C /* ThemeManager.swift in Sources */,
